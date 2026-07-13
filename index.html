@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>밀폐공간 전자작업허가 통합플랫폼 - 라이트 에디션</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter & Noto Sans KR Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+        /* Custom scrollbar for premium light look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.15); opacity: 0.2; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+        .animate-ring {
+            animation: pulse-ring 2s infinite ease-in-out;
+        }
+        .light-glow-emerald {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+        .light-glow-red {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+        }
+        .light-glow-indigo {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 flex flex-col p-2 md:p-4 select-none transition-colors duration-300">
+
+    <!-- 상단 메인 브랜드 및 정보 패널 -->
+    <header class="w-full flex flex-col lg:flex-row justify-between items-center bg-white rounded-2xl px-6 py-4 mb-4 border border-slate-200 shadow-sm gap-4">
+        <div class="flex items-center space-x-3 mb-3 lg:mb-0">
+            <div class="bg-indigo-600 text-white p-2.5 rounded-xl flex items-center justify-center shadow-md shadow-indigo-600/10">
+                <i class="fa-solid fa-shield-halved text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight text-slate-950 flex flex-wrap items-center gap-2">
+                    밀폐공간 전자작업허가 통합플랫폼
+                    <span class="text-xs font-normal bg-indigo-50 text-indigo-600 border border-indigo-200 rounded-full px-2.5 py-0.5">안전보건규칙 개정 연동</span>
+                </h1>
+                <p class="text-xs text-slate-500 mt-0.5">법정 특별교육 이수보고 통합 창구 및 관계기관(고용노동부·안전보건공단·119) 스마트 실시간 연계망</p>
+            </div>
+        </div>
+
+        <!-- 실시간 긴급 팝업 바로가기 및 안전보건 마일리지 센터 -->
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- 고용노동부 안전일터 신고 연계 -->
+            <button onclick="openMoelReportPopup()" class="bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs py-1.5 px-3 rounded-lg border border-red-200 flex items-center gap-1.5 transition">
+                <span class="w-2 h-2 bg-red-500 rounded-full inline-block animate-ping"></span>
+                <i class="fa-solid fa-bullhorn text-red-500"></i> 고용노동부 안전일터신고
+            </button>
+            
+            <!-- 안전보건공단 원콜서비스 연계 -->
+            <button onclick="openOneCallGlobalPopup()" class="bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs py-1.5 px-3 rounded-lg border border-amber-200 flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-phone-volume text-amber-600"></i> 공단 원콜(One-Call)
+            </button>
+
+            <!-- 안전 마일리지 정보 -->
+            <div class="flex items-center bg-slate-100 rounded-lg py-1.5 px-3.5 border border-slate-200">
+                <i class="fa-solid fa-medal text-amber-500 mr-2"></i>
+                <span class="text-xs font-semibold text-slate-600">
+                    안전 마일리지: <strong id="global-mileage" class="text-indigo-600 ml-1 font-bold">0</strong> P
+                </span>
+            </div>
+            
+            <!-- 119 SOS 전파 활성 상태 징후 -->
+            <div id="sos-badge" class="hidden bg-red-500 text-white font-bold text-xs py-1.5 px-3 rounded-full flex items-center space-x-1 shadow-md shadow-red-500/20 animate-pulse">
+                <span class="w-2 h-2 bg-white rounded-full inline-block animate-ping"></span>
+                <span>🚨 119 SOS 전송 중</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 전체 대시보드 바디 영역 -->
+    <div class="w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        <!-- ========================================================
+            LEFT COLUMN: 플랫폼 본체 (서버 관리용 통합 시스템 - 7/12 비율)
+            ======================================================== -->
+        <section class="lg:col-span-7 flex flex-col bg-white rounded-2xl border border-slate-200 p-4 md:p-5 shadow-sm relative overflow-hidden light-glow-indigo">
+            
+            <!-- 플랫폼 제어용 내부 탭 내비게이션 -->
+            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-4 pb-3 border-b border-slate-200">
+                <div class="flex items-center space-x-2">
+                    <span class="bg-indigo-50 text-indigo-600 text-[10px] font-bold px-2.5 py-1 rounded-lg">CENTRAL SYSTEM</span>
+                    <h2 class="text-sm font-bold text-slate-800">중앙 전산관리본부</h2>
+                </div>
+                
+                <!-- 탭 메뉴 버튼 -->
+                <div class="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/60 w-full xl:w-auto">
+                    <button id="tab-btn-map" onclick="switchPlatformTab('map')" class="flex-1 xl:flex-none flex items-center justify-center text-[11px] px-2.5 py-1.5 rounded-lg font-semibold transition-all text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-map-location-dot mr-1"></i> 위험지도
+                    </button>
+                    <button id="tab-btn-database" onclick="switchPlatformTab('database')" class="flex-1 xl:flex-none flex items-center justify-center text-[11px] px-2.5 py-1.5 rounded-lg font-semibold transition-all text-slate-500 hover:text-slate-800 font-medium">
+                        <i class="fa-solid fa-database mr-1"></i> 공간/허가 DB
+                    </button>
+                    <button id="tab-btn-edu" onclick="switchPlatformTab('edu')" class="flex-1 xl:flex-none flex items-center justify-center text-[11px] px-2.5 py-1.5 rounded-lg font-semibold transition-all bg-indigo-600 text-white font-bold">
+                        <i class="fa-solid fa-graduation-cap mr-1"></i> 교육실적 보고의무
+                    </button>
+                    <button id="tab-btn-portal" onclick="switchPlatformTab('portal')" class="flex-1 xl:flex-none flex items-center justify-center text-[11px] px-2.5 py-1.5 rounded-lg font-semibold transition-all text-slate-500 hover:text-slate-800 relative">
+                        <i class="fa-solid fa-signature mr-1"></i> 승인 포털
+                        <span id="portal-badge" class="hidden absolute -top-1.5 -right-1 bg-red-500 text-white text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center font-bold">1</span>
+                    </button>
+                    <button id="tab-btn-119" onclick="switchPlatformTab('119')" class="flex-1 xl:flex-none flex items-center justify-center text-[11px] px-2.5 py-1.5 rounded-lg font-semibold transition-all text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-truck-medical mr-1"></i> 119 연계
+                    </button>
+                </div>
+            </div>
+
+            <!-- 탭 영역 본체 -->
+            <div class="flex-1 min-h-[480px] flex flex-col justify-between">
+
+                <!-- PLATFORM TAB 1: RISK MAP -->
+                <div id="p-tab-map" class="hidden space-y-3 h-full">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-xs text-slate-500"><i class="fa-solid fa-circle-info text-indigo-500 mr-1"></i> 시범지역 관내 밀폐구역 현황입니다. 마커를 클릭하여 실시간 연계 정보를 조회하세요.</span>
+                        <div class="flex gap-1.5 self-end">
+                            <button onclick="setMapFilter('all')" id="filter-all" class="text-[10px] px-2.5 py-1 rounded bg-white text-slate-800 font-bold border border-slate-200">전체</button>
+                            <button onclick="setMapFilter('active')" id="filter-active" class="text-[10px] px-2.5 py-1 rounded bg-slate-100 text-slate-500 border border-slate-200">작업진행중</button>
+                            <button onclick="setMapFilter('danger')" id="filter-danger" class="text-[10px] px-2.5 py-1 rounded bg-slate-100 text-slate-500 border border-slate-200">고위험군</button>
+                        </div>
+                    </div>
+
+                    <!-- 지도 그래픽 에뮬레이터 -->
+                    <div class="relative flex-1 min-h-[300px] bg-slate-100 rounded-2xl border border-slate-200 overflow-hidden flex items-center justify-center shadow-inner">
+                        <div class="absolute inset-0 opacity-40 bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+                        
+                        <!-- 구도 가이드선 -->
+                        <div class="absolute inset-x-0 top-1/2 h-0.5 bg-slate-200"></div>
+                        <div class="absolute inset-y-0 left-1/2 w-0.5 bg-slate-200"></div>
+
+                        <div id="map-nodes-container" class="absolute inset-0">
+                            <!-- JS를 통해 노드 렌더링 -->
+                        </div>
+
+                        <!-- 지도 범례 -->
+                        <div class="absolute bottom-3 left-3 bg-white/95 border border-slate-200 p-2.5 rounded-xl text-[10px] space-y-1.5 z-10 shadow-md backdrop-blur-sm">
+                            <p class="font-bold text-slate-800 border-b border-slate-100 pb-1 mb-1">위험 지도 레벨</p>
+                            <div class="flex items-center space-x-1.5 text-slate-600">
+                                <span class="w-2.5 h-2.5 bg-red-500 rounded-full inline-block animate-ping"></span>
+                                <span>🚨 SOS 비상 상태</span>
+                            </div>
+                            <div class="flex items-center space-x-1.5 text-slate-600">
+                                <span class="w-2.5 h-2.5 bg-emerald-500 rounded-full inline-block animate-pulse"></span>
+                                <span>🟢 승인 필 및 실시간 작업 중</span>
+                            </div>
+                            <div class="flex items-center space-x-1.5 text-slate-600">
+                                <span class="w-2.5 h-2.5 bg-amber-500 rounded-full inline-block"></span>
+                                <span>🟡 주의 가스 우려 밀폐공간</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 선택된 공간 동적 모니터링 카드 -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <h3 class="text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1.5">
+                            <i class="fa-solid fa-circle-nodes text-indigo-500"></i> 선택 공간 관리 원장 및 비상 구조정보
+                        </h3>
+                        <div id="selected-space-detail" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-600">
+                            <p class="col-span-4 text-center py-2 text-slate-400 italic">지도의 마커를 터치하시면 가스 센서 정보와 비상 관할소방서 정보가 원격 연계 연동됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PLATFORM TAB 2: CENTRAL DATABASE -->
+                <div id="p-tab-database" class="hidden space-y-4">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-800">전국 밀폐공간 대장 및 작업이력 DB</h3>
+                            <p class="text-[10px] text-slate-500 mt-0.5">산업안전보건법 제64조에 의거, 유해가스 및 작업 이력 데이터는 전자적으로 3년간 보관됩니다.</p>
+                        </div>
+                        <button onclick="resetDataAndLogs()" class="bg-white text-slate-600 border border-slate-200 p-2 rounded-lg hover:bg-slate-100 transition shadow-sm" title="데이터 초기화">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 border-b border-slate-200">
+                                    <th class="p-2.5">ID / 시설 종류</th>
+                                    <th class="p-2.5">시설 정보 / 담당사</th>
+                                    <th class="p-2.5">주요 물질 / 위험도</th>
+                                    <th class="p-2.5">법적 기록 보존</th>
+                                </tr>
+                            </thead>
+                            <tbody id="db-table-body" class="divide-y divide-slate-100">
+                                <!-- JS 동적 주입 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 이력 확인 패널 -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                        <h4 class="text-xs font-bold text-slate-700"><i class="fa-solid fa-clock-rotate-left text-indigo-500 mr-1.5"></i> 최근 전송된 모바일 전자작업허가 원서</h4>
+                        <div id="permit-history-list" class="space-y-1.5 max-h-[140px] overflow-y-auto">
+                            <!-- 작업 이력 서식 렌더링 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PLATFORM TAB 3: EDUCATION REPORTING & ENFORCEMENT -->
+                <div id="p-tab-edu" class="space-y-4">
+                    <!-- 신설 법제 정책 하이라이트 -->
+                    <div class="bg-indigo-50 border border-indigo-200 p-3.5 rounded-xl space-y-2">
+                        <div class="flex justify-between items-start">
+                            <span class="bg-indigo-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">안전 규칙 개정안</span>
+                            <span class="text-[10px] text-indigo-600 font-mono"><i class="fa-solid fa-arrows-rotate mr-1 animate-spin"></i> 일일 공단 DB 배치 동기화 활성</span>
+                        </div>
+                        <h3 class="text-xs font-bold text-slate-900"><i class="fa-solid fa-scale-balanced mr-1.5"></i> 산업안전보건기준에 관한 규칙 제620조 개정안</h3>
+                        <p class="text-[11px] text-slate-600 leading-relaxed">
+                            밀폐공간 진입 전 근로자의 교육 실적 보고가 의무화되었습니다. 일용직 및 단기 작업자를 포함한 교육 수료 실적을 본 전자허가시스템 플랫폼으로 보고해야 하며, 보고의무 위반 시 점증적 가중 과태료가 부과됩니다.
+                        </p>
+                        
+                        <!-- 매뉴얼 파일 참조 연결 알림 -->
+                        <div class="bg-white border border-indigo-100 rounded-lg p-2 flex justify-between items-center text-[10px] text-slate-700">
+                            <span><i class="fa-regular fa-file-pdf text-red-500 mr-1 text-xs"></i> <strong>"1. 안전교육 실적보고 사용자 매뉴얼(국내학교)(홈페이지게시용).pdf"</strong> 참조 연계</span>
+                            <button onclick="downloadManualSim()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-1 px-2 rounded font-bold border border-slate-200 transition">
+                                매뉴얼 미리보기
+                            </button>
+                        </div>
+
+                        <!-- 시범지역 모니터링 통계 수치 -->
+                        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-indigo-200/50 text-[10px] text-indigo-700">
+                            <div><i class="fa-solid fa-folder-open mr-1"></i> 밀폐공간 보유 사업장: <strong class="text-indigo-900 font-bold">13,128개소</strong></div>
+                            <div><i class="fa-solid fa-person-digging mr-1"></i> 실제 수행 사업장: <strong class="text-indigo-900 font-bold">10,499개소</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- 실적 등록 방식 전환 영역 (일괄등록 / 단일등록) -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        
+                        <!-- 1. 일괄 엑셀 템플릿 처리 (Excel Bulk Upload) -->
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+                            <h4 class="text-xs font-bold text-slate-700"><i class="fa-solid fa-file-excel text-green-600 mr-1.5"></i> 엑셀 일괄 등록 기능</h4>
+                            <p class="text-[10px] text-slate-500">여러 작업을 한 번에 등록하는 경우 편리한 엑셀 템플릿 일괄 보고 기능을 사용하십시오.</p>
+                            
+                            <div class="flex flex-col gap-2 pt-1">
+                                <button onclick="downloadExcelTemplate()" class="w-full bg-white hover:bg-slate-50 text-slate-700 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 border border-slate-300 shadow-sm">
+                                    <i class="fa-solid fa-download text-green-600"></i> 표준 Excel 템플릿 다운로드
+                                </button>
+                                
+                                <label class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 py-1.5 px-3 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer text-center shadow-sm">
+                                    <i class="fa-solid fa-file-arrow-up"></i> 작성 템플릿 일괄 업로드
+                                    <input type="file" id="excel-file-input" onchange="simulateExcelUpload(event)" class="hidden" accept=".xlsx,.xls,.csv" />
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 2. 개별 건별 실적 보고 직접 입력 -->
+                        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                            <h4 class="text-xs font-bold text-slate-700"><i class="fa-solid fa-pen-to-square text-indigo-600 mr-1.5"></i> 개별 실적 보고 (직접 기입)</h4>
+                            
+                            <div class="space-y-1.5 text-xs text-slate-600">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block">일용직/단기 작업자수</span>
+                                        <input type="number" id="edu-input-temp" value="2" class="w-full bg-white border border-slate-300 rounded p-1 text-[11px] text-slate-800 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block">상시/기타 작업자수</span>
+                                        <input type="number" id="edu-input-perm" value="2" class="w-full bg-white border border-slate-300 rounded p-1 text-[11px] text-slate-800 focus:outline-none" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-slate-500 block">작업자별 안전교육 수료증 번호 <span class="text-indigo-600">(콤마로 구분)</span></span>
+                                    <input type="text" id="edu-input-codes" value="EDU-2026-901, EDU-2026-902" placeholder="예: EDU-2026-901, EDU-2026-902" class="w-full bg-white border border-slate-300 rounded p-1 text-[11px] text-slate-800 focus:outline-none font-mono" />
+                                    <span class="text-[8px] text-slate-500 block mt-0.5">* 매일 오전 04시 공단 DB와 배치 대조 검증을 수행합니다.</span>
+                                </div>
+                                <button onclick="submitSingleEduReport()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1 px-3 rounded text-[11px] transition">
+                                    교육 보고서 제출하기
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 미보고 사업장 대장 및 점증 과태료 추적 상황판 -->
+                    <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-1.5">
+                            <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> 미보고 의무위반 사업장 과태료 관리대장
+                            </h4>
+                            <span class="text-[9px] bg-red-100 text-red-600 border border-red-200 px-1.5 py-0.5 rounded font-black">경고 추적중</span>
+                        </div>
+                        
+                        <div class="overflow-y-auto max-h-[160px] space-y-2 pr-1" id="non-reporting-workplaces">
+                            <!-- JS를 통해 미보고 사업장 목록 및 단계별 과태료 부과 현황 표출 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PLATFORM TAB 4: APPROVAL PORTAL -->
+                <div id="p-tab-portal" class="hidden space-y-3">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <h3 class="text-xs font-bold text-slate-800">사업주·원청·발주처 승인 대시보드</h3>
+                        <p class="text-[10px] text-slate-500 mt-0.5">현장에서 송출된 작업허가 신청서에 대해, 서류 적격 여부 및 교육 수료 신뢰성을 검증한 후 서명 승인 처리를 이행합니다.</p>
+                    </div>
+
+                    <!-- 허가 요청 리스트 컨테이너 -->
+                    <div id="portal-requests-container" class="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+                        <!-- 대기중인 승인들이 여기에 표시됩니다 -->
+                    </div>
+
+                    <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-[10px] text-slate-500 space-y-1">
+                        <span class="font-bold text-slate-700 block"><i class="fa-solid fa-scale-balanced mr-1 text-amber-500"></i> 올바른 승인 책임 권고사항</span>
+                        <p>• 도급 작업 시, 도급인(원청) 및 수급인(작업자) 양방향 승인이 완료되어야 QR 진입락이 개방됩니다.</p>
+                    </div>
+                </div>
+
+                <!-- PLATFORM TAB 5: 119 EMERGENCY RESPONSE -->
+                <div id="p-tab-119" class="hidden space-y-3">
+                    <div id="emergency-notice-panel" class="p-3.5 rounded-xl border bg-white border-slate-200 text-slate-500 transition-all">
+                        <div class="flex items-center space-x-2.5 mb-1.5">
+                            <i id="emergency-notice-icon" class="fa-solid fa-house-medical-flag text-lg text-slate-400"></i>
+                            <h3 id="emergency-notice-title" class="text-xs font-bold text-slate-800">119 소방방재청 실시간 비상전송 채널</h3>
+                        </div>
+                        <p class="text-[11px] text-slate-500">작업 중 유해가스 돌발 누출 혹은 감시원 상주 체크 미달 상황 시, 작업위치 및 주요 위험인자 정보가 실시간 소방청 구조대 무선망으로 즉각 송출됩니다.</p>
+                    </div>
+
+                    <!-- 실시간 긴급 구조 상황판 (활성 시에만 표시) -->
+                    <div id="rescue-panel-active" class="hidden grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="bg-red-50 border border-red-200 p-3 rounded-xl space-y-2.5">
+                            <h4 class="text-xs font-bold text-red-600 border-b border-red-200/50 pb-1 flex items-center justify-between">
+                                <span>🚨 소방 전송 비상 명세</span>
+                                <span class="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-black">ACTIVE</span>
+                            </h4>
+                            <div class="space-y-1.5 text-xs text-slate-700">
+                                <div>
+                                    <span class="text-slate-500 text-[10px] block">발생 현장 정보</span>
+                                    <strong id="rescue-space-name" class="text-slate-800"></strong>
+                                    <span id="rescue-space-address" class="text-[10px] text-slate-500 italic block"></span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 bg-red-100 p-1.5 rounded border border-red-200/50">
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block">유해물질 구분</span>
+                                        <span id="rescue-space-hazard" class="font-bold text-red-600"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-[9px] text-slate-500 block">현장 추정인원</span>
+                                        <span class="font-bold text-red-600">작업자 2명 고립 우려</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 엠뷸런스 출동 경로 및 의료기관 연동 정보 -->
+                        <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl flex flex-col justify-between">
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-700 border-b border-slate-200 pb-1 mb-2">🚑 소방방재 긴급 구조망 상태</h4>
+                                <div class="space-y-1.5 text-xs">
+                                    <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-200">
+                                        <span class="text-slate-600">진천소방서 구조본부</span>
+                                        <span class="bg-red-100 text-red-600 text-[9px] px-1.5 py-0.5 rounded font-bold animate-pulse">긴급 출동 지령 하달</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end pt-3">
+                                <button onclick="clearEmergencyState()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs py-1.5 px-3.5 rounded-lg font-bold transition shadow-sm">
+                                    <i class="fa-solid fa-check mr-1.5"></i> 현장 정상화 및 긴급 종료
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 평상시 대기 상태 화면 -->
+                    <div id="rescue-panel-empty" class="text-center py-10 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+                        <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <i class="fa-solid fa-house-shield text-xl"></i>
+                        </div>
+                        <p class="text-xs text-slate-500">현재 수신된 긴급 SOS가 없으며, 전국 관제망이 정상 대기 중입니다.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 실시간 전송 감사 및 시스템 알림 영역 -->
+            <div class="mt-4 border-t border-slate-200 pt-3">
+                <h3 class="text-xs font-bold text-slate-600 mb-2 flex items-center">
+                    <i class="fa-regular fa-bell text-slate-500 mr-1.5"></i> 플랫폼 통합 감사 추적 로그 (Audit Log)
+                </h3>
+                <div id="system-notif-log" class="h-16 overflow-y-auto space-y-1 text-[10px] font-mono scrollbar-thin text-slate-600">
+                    <!-- 시스템 가동 로그가 실시간 추가됩니다 -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================================
+            RIGHT COLUMN: 모바일 전용 안전 스마트 앱 에뮬레이터 (5/12 비율)
+            ======================================================== -->
+        <section class="lg:col-span-5 flex flex-col items-center justify-center">
+            
+            <!-- 스마트폰 물리 형상 케이스 디자인 (프리미엄 라이트 실버 컨셉) -->
+            <div class="w-full max-w-[340px] bg-slate-200 rounded-[42px] p-3 border-[5px] border-slate-300 shadow-xl relative overflow-hidden flex flex-col min-h-[620px]">
+                
+                <!-- 상단 리시버 & 전면 카메라 구멍 설계 -->
+                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-5.5 bg-slate-300 rounded-b-xl z-20 flex items-center justify-center">
+                    <div class="w-10 h-1 bg-slate-400 rounded-full"></div>
+                </div>
+
+                <!-- 모바일 전원/네트워크 상태바 렌더링 (라이트모드 스타일) -->
+                <div class="flex justify-between items-center px-4 pt-3.5 pb-2 text-[10px] text-slate-600 font-mono select-none z-10">
+                    <span id="phone-time">10:51</span>
+                    <div class="flex items-center space-x-1">
+                        <i class="fa-solid fa-signal text-[8px] text-emerald-600"></i>
+                        <span>5G</span>
+                        <i class="fa-solid fa-battery-three-quarters ml-1 text-slate-600"></i>
+                        <span>92%</span>
+                    </div>
+                </div>
+
+                <!-- 에뮬레이터 역할 전환 헤더 -->
+                <div class="bg-white p-1 rounded-xl mx-1 mb-2.5 flex justify-around text-center z-10 border border-slate-300/80 shadow-inner">
+                    <button id="role-btn-worker" onclick="switchAppRole('worker')" class="flex-1 text-[10px] py-1.5 rounded-lg transition-all font-bold bg-indigo-600 text-white">
+                        ① 현장작업자
+                    </button>
+                    <button id="role-btn-watcher" onclick="switchAppRole('watcher')" class="flex-1 text-[10px] py-1.5 rounded-lg transition-all font-bold text-slate-500 hover:text-slate-800">
+                        ② 감시인
+                    </button>
+                    <button id="role-btn-guardian" onclick="switchAppRole('guardian')" class="flex-1 text-[10px] py-1.5 rounded-lg transition-all font-bold text-slate-500 hover:text-slate-800">
+                        ③ 안전지킴이
+                    </button>
+                </div>
+
+                <!-- 모바일 기기 디스플레이 구역 (산뜻한 라이트 그레이 스크린) -->
+                <div class="flex-1 bg-white rounded-2xl p-3 flex flex-col justify-between overflow-y-auto max-h-[460px] relative border border-slate-300 shadow-sm">
+                    
+                    <!-- 모바일 앱 내부 탑재 원콜 서비스 안내 팝업 -->
+                    <div id="onecall-modal" class="hidden absolute inset-2 bg-white/95 border border-slate-300 rounded-xl z-30 flex flex-col justify-between p-3.5 backdrop-blur-md animate-fade-in shadow-xl">
+                        <div class="space-y-2.5">
+                            <div class="flex items-center space-x-2 text-amber-600 border-b border-slate-200 pb-2">
+                                <i class="fa-solid fa-phone-volume text-base animate-pulse"></i>
+                                <h4 class="text-xs font-black">공단 질식예방 원콜 서비스 연동</h4>
+                            </div>
+                            <p class="text-[10px] text-slate-600 leading-relaxed">
+                                안전 장비(가스측정기, 환기팬, 송기마스크)가 없거나 작동법 교육이 필요하신가요? 
+                                <br><strong class="text-amber-600">안전보건공단(☎ 1644-8595)</strong>에서 무상으로 현장 방문 가스측정, 안전 교육, 장비 대여(3일)를 종합 지원합니다.
+                            </p>
+                            <div class="bg-amber-50 p-2 rounded border border-amber-200 space-y-1 text-[9px] text-slate-600">
+                                <span class="font-bold text-amber-800 block"><i class="fa-solid fa-gift text-amber-500 mr-1"></i> 원콜 종합무상 서비스 내용</span>
+                                <p>• 산소/유해가스 전문가 현장 직접 측정</p>
+                                <p>• 가스측정기, 환기팬, 송기마스크 무상 배달</p>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5 pt-2">
+                            <button onclick="goToKoshOneCall()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded text-[10px] flex items-center justify-center transition shadow-sm">
+                                <i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i> 공단 원콜 온라인 신청 (새창)
+                            </button>
+                            <button onclick="applyOneCallEquipment()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-1.5 rounded text-[10px] flex items-center justify-center transition shadow-sm">
+                                <i class="fa-solid fa-circle-check mr-1.5"></i> 공단 무상장비 가상 대여 적용
+                            </button>
+                            <button onclick="closeOneCallPopup()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 py-1 rounded text-[9px] border border-slate-200 transition">
+                                자체 장비를 보유하고 있습니다 (닫기)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 1. 작업자용 애플리케이션 판넬 -->
+                    <div id="app-panel-worker" class="flex-1 flex flex-col justify-between">
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-2 mb-2">
+                            <span class="text-[11px] font-bold text-slate-700">작업자 전용 모드</span>
+                            <span class="text-[9px] bg-slate-100 text-indigo-600 px-1.5 py-0.5 rounded border border-indigo-200 font-bold">안전 자격인증형</span>
+                        </div>
+
+                        <!-- STEP A: 안전 교육 퀴즈 구역 (미이수 시 강제 락인) -->
+                        <div id="worker-substep-quiz-intro" class="space-y-3 py-2 text-center my-auto">
+                            <div class="w-14 h-14 bg-indigo-50 border border-indigo-200 rounded-full flex items-center justify-center mx-auto text-indigo-600 animate-pulse">
+                                <i class="fa-solid fa-user-shield text-xl"></i>
+                            </div>
+                            <div class="space-y-1">
+                                <h4 class="text-xs font-bold text-slate-800">진입 개시 전 안전보건 의무교육</h4>
+                                <p class="text-[10px] text-slate-500 leading-relaxed px-1">
+                                    밀폐공간 내 최저 적정 산소 농도 규정 및 질식 대비 환기 수칙 등을 이수하셔야 전자기록 허가 신청 절차가 해제됩니다.
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-lg text-left text-[10px] text-indigo-600 space-y-1 border border-slate-200">
+                                <span class="font-bold text-slate-700 block"><i class="fa-solid fa-gift text-amber-500 mr-1"></i> 이수 혜택 및 잠금 해제</span>
+                                <p>• 적정 환경 가이드 지식 체득 보증</p>
+                                <p>• 완수 즉시 <strong>안전 마일리지 500P</strong> 자동 가산</p>
+                            </div>
+                            <button onclick="startSafetyQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2 rounded-lg text-xs flex items-center justify-center transition shadow-md shadow-indigo-600/10">
+                                안전교육 평가 풀기 (Unlock) <i class="fa-solid fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+
+                        <!-- STEP B: 실제 퀴즈 질답 구역 -->
+                        <div id="worker-substep-quiz-play" class="hidden space-y-3 py-1">
+                            <div class="flex justify-between items-center text-[10px] text-slate-500">
+                                <span id="quiz-progress-text">질문 1 / 3</span>
+                                <span class="text-amber-600 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>100% 합격 필수</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                <div id="quiz-progress-bar" class="bg-indigo-600 h-full transition-all" style="width: 33%"></div>
+                            </div>
+                            <div class="space-y-2.5">
+                                <h5 id="quiz-question-title" class="text-xs font-bold text-slate-800 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                    질문 로딩 오류
+                                </h5>
+                                <div id="quiz-options-container" class="space-y-1.5">
+                                    <!-- 보기들이 여기에 동적으로 주입됩니다 -->
+                                </div>
+                            </div>
+                            <button id="quiz-next-btn" onclick="submitQuizAnswer()" disabled class="w-full py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed transition">
+                                정답 제출 후 다음으로
+                            </button>
+                        </div>
+
+                        <!-- STEP C: 퀴즈 이수 완료 및 QR 스캔 대기화면 -->
+                        <div id="worker-substep-scan" class="hidden space-y-3.5 text-center my-auto">
+                            <p class="text-[11px] text-slate-600 font-semibold">진입하려는 현장에 부착된 <strong class="text-indigo-600">시설 고유 QR</strong>을 모바일로 인식시키세요.</p>
+                            
+                            <!-- 가상 카메라 뷰파인더 렌더링 -->
+                            <div class="w-40 h-40 border-2 border-dashed border-indigo-400 mx-auto rounded-xl relative flex flex-col items-center justify-center bg-slate-50 overflow-hidden">
+                                <span class="absolute inset-x-0 h-0.5 bg-indigo-500 animate-pulse" style="animation-duration: 1.5s;"></span>
+                                <div class="p-4 text-center text-[10px] text-slate-400 font-mono">
+                                    <i class="fa-solid fa-qrcode text-3xl mb-1 text-slate-300"></i>
+                                    <p>[현장 QR 탐색]</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5 pt-1.5">
+                                <span class="text-[9px] text-slate-500 block">원하는 맨홀·정화조 QR을 선택 입력하세요.</span>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="simulateQRScan('CS-001')" class="bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700 py-1.5 px-2 rounded-lg border border-slate-200 transition shadow-sm">
+                                        상수도 맨홀 104호
+                                    </button>
+                                    <button onclick="simulateQRScan('CS-002')" class="bg-slate-100 hover:bg-slate-200 text-[10px] text-slate-700 py-1.5 px-2 rounded-lg border border-slate-200 transition shadow-sm">
+                                        정화조 시설 3호
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STEP D: 허가서 상세 작성 및 전력 측정값 기입 -->
+                        <div id="worker-substep-form" class="hidden space-y-2.5">
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 text-xs">
+                                <span class="text-[9px] text-slate-500 block">QR 연동 확인 밀폐구역</span>
+                                <strong id="worker-form-space-name" class="text-indigo-600"></strong>
+                            </div>
+
+                            <!-- 실시간 가스 계측 수동 입력 에뮬레이션 -->
+                            <div class="space-y-1.5">
+                                <label class="text-[9px] text-slate-600 block font-bold">1단계: 현장 가독성 가스 측정치 입력</label>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <div class="bg-slate-50 p-1.5 rounded border border-slate-200">
+                                        <span class="text-[9px] text-slate-500 block">산소농도 (O2)</span>
+                                        <input type="number" id="input-o2" value="20.9" step="0.1" class="w-full bg-transparent text-emerald-600 font-bold focus:outline-none text-xs" />
+                                        <span class="text-[8px] text-slate-400">기준: 18% ~ 23.5%</span>
+                                    </div>
+                                    <div class="bg-slate-50 p-1.5 rounded border border-slate-200">
+                                        <span class="text-[9px] text-slate-500 block">황화수소 (H2S)</span>
+                                        <input type="number" id="input-h2s" value="0" class="w-full bg-transparent text-slate-700 font-bold focus:outline-none text-xs" />
+                                        <span class="text-[8px] text-slate-400">기준: 10ppm 미만</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 현장 증빙 사진 업로드 증빙 -->
+                            <div class="space-y-1">
+                                <label class="text-[9px] text-slate-600 block font-bold">2단계: 안전조치 이행 상태 증빙</label>
+                                <div class="flex items-center space-x-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                    <button type="button" onclick="triggerPhotoUploadSim()" id="btn-photo-upload" class="text-[10px] bg-slate-100 text-slate-700 py-1 px-2.5 rounded border border-slate-200 transition flex items-center shadow-sm">
+                                        <i class="fa-solid fa-camera mr-1"></i> 현장 사진등록
+                                    </button>
+                                    <span id="photo-upload-status" class="text-[9px] text-slate-500">측정기 및 환기 가동 사진</span>
+                                </div>
+                            </div>
+
+                            <!-- 안전 조치 체크리스트 검정 -->
+                            <div class="bg-slate-50 p-2 rounded-lg space-y-1 text-[10px] border border-slate-200">
+                                <label class="text-[9px] text-slate-500 block font-bold">3단계: 작업안전 수칙 자가 확정</label>
+                                <label class="flex items-center space-x-1.5 cursor-pointer">
+                                    <input type="checkbox" id="chk-vent" class="rounded bg-white border-slate-300 text-indigo-600" />
+                                    <span class="text-slate-600">송풍 환기 가동을 지속 유지 중인가?</span>
+                                </label>
+                                <label class="flex items-center space-x-1.5 cursor-pointer">
+                                    <input type="checkbox" id="chk-harness" class="rounded bg-white border-slate-300 text-indigo-600" />
+                                    <span class="text-slate-600">구명줄, 안전대 및 송기 마스크 구비</span>
+                                </label>
+                            </div>
+
+                            <button onclick="submitElectronicPermit()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm">
+                                통합 관리 서버로 승인허가서 발송
+                            </button>
+                        </div>
+
+                        <!-- STEP E: 허가 대기 중 안내 화면 -->
+                        <div id="worker-substep-pending" class="hidden text-center py-6 space-y-3.5 my-auto">
+                            <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto animate-spin"></div>
+                            <div class="space-y-1">
+                                <h4 class="text-xs font-bold text-slate-800">원청·관리책임 승인 검사중</h4>
+                                <p class="text-[10px] text-slate-500 leading-relaxed px-1">
+                                    승인이 가결되면 현장 모바일에 전자 인증서가 발송되며 입구 잠금이 해제됩니다.
+                                </p>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-left text-[9px] space-y-1 text-slate-500">
+                                <span class="text-amber-600 font-bold block"><i class="fa-solid fa-lightbulb mr-1"></i> 시뮬레이터 가이드</span>
+                                <p>왼쪽 상단 탭에서 <strong>'승인 포털'</strong> 선택 후 [전자서식 안전승인] 버튼을 클릭해 단계를 직접 통과해 보세요!</p>
+                            </div>
+                        </div>
+
+                        <!-- STEP F: 최종 작업 승인 및 승인서 수령 단계 -->
+                        <div id="worker-substep-approved" class="hidden text-center py-4 space-y-3 my-auto bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
+                            <div class="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto shadow-md">
+                                <i class="fa-solid fa-file-signature text-lg"></i>
+                            </div>
+                            <div class="space-y-1">
+                                <h4 class="text-xs font-bold text-emerald-600">작업 안전 허가 완료!</h4>
+                                <p id="approved-space-name" class="text-[10px] text-slate-700 font-semibold"></p>
+                                <span id="approved-permit-id" class="text-[9px] text-slate-500 block font-mono"></span>
+                            </div>
+                            <div class="text-left text-[9px] bg-white p-2 rounded-lg space-y-0.5 text-slate-500 border border-slate-200">
+                                <p>• <strong>허가 제한 시간:</strong> 금일 당직 한정 유효</p>
+                                <p>• <strong>유지 조건:</strong> 감시인이 상주하여 안전 보고를 이행할 것</p>
+                            </div>
+                            <button onclick="activateWorkWatcherBridge()" class="w-full bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs hover:bg-emerald-600 transition shadow-sm">
+                                감시인 지정 연계 및 감시 가동
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. 감시인용 전용 모바일 앱 판넬 -->
+                    <div id="app-panel-watcher" class="hidden flex-1 flex flex-col justify-between">
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-2 mb-2">
+                            <span class="text-[11px] font-bold text-slate-700">감시인 앱 (Watchdog)</span>
+                            <span class="text-[9px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-bold border border-red-200">생명구명 담당</span>
+                        </div>
+
+                        <!-- 미인증 구역 -->
+                        <div id="watcher-substep-unauthenticated" class="text-center py-6 space-y-4 my-auto">
+                            <div class="w-14 h-14 bg-slate-50 border border-slate-200 rounded-full flex items-center justify-center mx-auto text-indigo-600 animate-pulse">
+                                <i class="fa-solid fa-location-crosshairs text-xl"></i>
+                            </div>
+                            <div class="space-y-1">
+                                <h4 class="text-xs font-bold text-slate-800">감시인 반경인증 GPS 체크인</h4>
+                                <p class="text-[10px] text-slate-500 leading-relaxed px-1">
+                                    상시적 노동감시를 탈피하기 위해 밀폐현장 반경 10m 구역 내 상주 여부만 진입 및 점검 시 1회성으로 검정 보증합니다.
+                                </p>
+                            </div>
+                            <button onclick="triggerWatcherCheckIn()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm">
+                                상주 구역 위치 인증
+                            </button>
+                        </div>
+
+                        <!-- 감시 가동 구역 (30분 롤링 및 SOS 무선화면) -->
+                        <div id="watcher-substep-monitoring" class="hidden space-y-3">
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">
+                                <span class="text-[9px] text-slate-500 block">감시중인 작업 허가건</span>
+                                <strong id="watcher-monitoring-space" class="text-slate-700">상수도 맨홀 104호</strong>
+                                <div class="flex items-center space-x-1.5 text-[9px] text-emerald-600 mt-1.5">
+                                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block animate-ping"></span>
+                                    <span>외부 감시원 배치 완수 (상주 가동 중)</span>
+                                </div>
+                            </div>
+
+                            <!-- 30분 정기보고 인터렉티브 타이머 -->
+                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-center space-y-2">
+                                <div class="flex justify-between items-center text-[9px] text-slate-500">
+                                    <span>정기 안전보고 한도</span>
+                                    <span class="text-red-500 font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>미확인 시 소방 자동연계</span>
+                                </div>
+                                <div class="text-xl font-mono font-black text-slate-800 flex items-center justify-center gap-1.5">
+                                    <i class="fa-regular fa-clock text-amber-500 animate-spin" style="animation-duration: 4s;"></i>
+                                    <span id="watcher-timer-display">30분 00초</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="resetSafetyTimer()" class="bg-white hover:bg-slate-100 text-indigo-600 text-[10px] py-1.5 rounded border border-slate-300 transition shadow-sm font-bold">
+                                        이상없음 (연장)
+                                    </button>
+                                    <button onclick="triggerImmediateSOS('🚨 감시인 수동 발신 비상 SOS 구조요청 신호가 송출되었습니다.')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] py-1.5 rounded transition shadow-sm">
+                                        비상 SOS
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 감시 활동 로그 -->
+                            <div class="bg-white p-2 rounded-lg text-[9px] font-mono h-20 overflow-y-auto space-y-1 text-slate-400 border border-slate-200 scrollbar-none">
+                                <p class="text-slate-600 border-b border-slate-200 pb-0.5 font-bold"><i class="fa-solid fa-clipboard-list mr-1"></i>최근 안전 점검기록</p>
+                                <div id="watcher-log-container">
+                                    <!-- 로그 주입 -->
+                                </div>
+                            </div>
+
+                            <button onclick="finishWatcherWork()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded-lg border border-slate-300 transition shadow-sm font-bold">
+                                작업 성료 및 출입구 폐쇄 보고
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. 안전지킴이/감독관용 모바일 앱 판넬 -->
+                    <div id="app-panel-guardian" class="hidden flex-1 flex flex-col justify-between">
+                        <div class="flex justify-between items-center border-b border-slate-200 pb-2 mb-2">
+                            <span class="text-[11px] font-bold text-slate-700">지자체 지킴이·감독 앱</span>
+                            <span class="text-[9px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-bold border border-amber-200">불시 점검 단속</span>
+                        </div>
+
+                        <div class="space-y-3 flex-1 flex flex-col justify-between">
+                            <div class="space-y-2">
+                                <div class="bg-slate-50 p-2.5 rounded-lg text-xs space-y-1">
+                                    <p class="text-[9px] text-slate-500">지자체 소속 점검관 관할구역</p>
+                                    <strong class="text-slate-700"><i class="fa-solid fa-map-pin mr-1 text-indigo-600"></i>충북 진천군 일원 안전지구</strong>
+                                </div>
+                                <p class="text-[10px] text-slate-500 leading-relaxed">
+                                    중앙 서버의 밀폐공간 위험지도를 실시간 동기화하여 현재 관내에서 실제 가동 중인 불시 점검 대상을 단속·확인합니다.
+                                </p>
+                            </div>
+
+                            <!-- 현재 가동중인 점검 대상 리스트 -->
+                            <div id="guardian-active-works-list" class="space-y-2 flex-1 max-h-[220px] overflow-y-auto pr-1">
+                                <!-- 가동 작업이 주입됩니다 -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 스마트폰 물리 홈 버튼 디자인 -->
+                <div class="w-24 h-1 bg-slate-300 rounded-full mx-auto mt-2.5 mb-1"></div>
+
+            </div>
+            
+            <p class="text-[10px] text-slate-400 mt-2 text-center max-w-[280px]">
+                ※ 상기 가상 기기 화면의 <strong class="text-slate-500">상단 탭</strong>을 교체하여 [현장작업자], [감시인], [안전지킴이] 모바일 기능을 모의 체험해 볼 수 있습니다.
+            </p>
+        </section>
+
+    </div>
+
+    <!-- ========================================================
+        고용노동부 안전일터 신고 연동 모달 창
+        ======================================================== -->
+    <div id="moel-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-red-200 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2 text-red-600">
+                    <i class="fa-solid fa-bullhorn text-xl"></i>
+                    <h3 class="font-black text-sm">고용노동부 안전일터 위험신고 센터</h3>
+                </div>
+                <button onclick="closeMoelReportPopup()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <p class="text-xs text-slate-600 leading-relaxed">
+                밀폐공간 내 환기미비, 송기마스크 미지급, 감시인 미배치 등 급박한 질식재해 유해 위험요인이 발견되었나요? 즉시 익명으로 제보하십시오. 고용노동부가 긴급 점검 및 현장 시정을 강력히 조치합니다.
+            </p>
+
+            <div class="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+                <div>
+                    <label class="block text-[10px] text-slate-500 mb-1">위험 발견 위치 (공사장 또는 시설주 명)</label>
+                    <input type="text" id="moel-input-location" placeholder="예: 충북 진천군 아파트 정화조 준설현장" class="w-full bg-white border border-slate-300 rounded p-1.5 text-xs text-slate-800 focus:outline-none focus:border-red-400" />
+                </div>
+                <div>
+                    <label class="block text-[10px] text-slate-500 mb-1">신고 분야 구분</label>
+                    <select id="moel-input-category" class="w-full bg-white border border-slate-300 rounded p-1.5 text-xs text-slate-800 focus:outline-none">
+                        <option value="no_vent">송풍 환기 장치 미가동 / 부재</option>
+                        <option value="no_mask">송기마스크 및 개인 호흡보호구 미지급</option>
+                        <option value="no_watcher">외부 감시인 상주 부재</option>
+                        <option value="no_meter">사전 가스 농도 미측정 상태 강제 진입</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] text-slate-500 mb-1">상세 위반 사항</label>
+                    <textarea id="moel-input-desc" placeholder="위험 사항을 간단히 설명해주세요." class="w-full bg-white border border-slate-300 rounded p-1.5 text-xs text-slate-800 h-16 focus:outline-none resize-none"></textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <button onclick="closeMoelReportPopup()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 py-2 rounded-lg font-bold transition border border-slate-200">닫기</button>
+                <button onclick="submitMoelReport()" class="bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-black transition flex items-center justify-center gap-1.5 shadow-sm shadow-red-600/10">
+                    <i class="fa-solid fa-paper-plane"></i> 위반신고 실시간 접수
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+        안전보건공단 원콜서비스 대형 안내 모달 창
+        ======================================================== -->
+    <div id="onecall-global-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-amber-200 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2 text-amber-600">
+                    <i class="fa-solid fa-phone-volume text-xl animate-bounce"></i>
+                    <h3 class="font-black text-sm">안전보건공단 질식예방 원콜(One-Call) 종합창구</h3>
+                </div>
+                <button onclick="closeOneCallGlobalPopup()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <p class="text-xs text-slate-600 leading-relaxed">
+                밀폐공간 질식 예방 장비(산소·유해가스 측정기, 송풍기, 송기마스크) 구매나 보유가 예산 부족으로 힘드신가요? <br>
+                <strong>전화 한 통(☎ 1644-8595)</strong>으로 가스측정 및 장비 무료 대여 서비스를 종합 지원합니다.
+            </p>
+
+            <div class="bg-amber-50 p-3.5 rounded-xl border border-amber-100 text-xs space-y-2 text-slate-600 leading-relaxed">
+                <div><strong class="text-slate-800">● 현장 가스 측정 서비스:</strong> 전문가가 현장에 무상 방문하여 정밀 원격 측정을 대행해 드립니다.</div>
+                <div><strong class="text-slate-800">● 맞춤형 안전 교육:</strong> 현장 노무자를 위한 맨홀 진입 10분 안전 수칙 원격 및 직접 전파.</div>
+                <div><strong class="text-slate-800">● 긴급 대여 서비스:</strong> 신청 접수 시 인근 테크노센터에서 무상 장비를 즉각 발송합니다.</div>
+            </div>
+
+            <div class="flex flex-col gap-2 text-xs pt-1">
+                <button onclick="goToKoshOneCall()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg flex items-center justify-center transition gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> 공단 원콜 온라인 공식 신청 바로가기 (새창)
+                </button>
+                <button onclick="applyOneCallEquipmentGlobal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-2 rounded-lg flex items-center justify-center transition gap-1.5 shadow-md shadow-emerald-500/10">
+                    <i class="fa-solid fa-circle-check"></i> 현장 필수 장비 무상 가상 지원 매칭 (100P 지급)
+                </button>
+                <button onclick="closeOneCallGlobalPopup()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 py-1.5 rounded-lg transition border border-slate-200">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+        커스텀 알림/안내 팝업 상자 (alert 대용 시스템)
+        ======================================================== -->
+    <div id="custom-toast-overlay" class="hidden fixed bottom-5 right-5 z-50 max-w-sm w-full bg-white border border-indigo-200 p-4 rounded-xl shadow-2xl flex items-start gap-3 animate-slide-in">
+        <div id="toast-icon-bg" class="bg-indigo-50 text-indigo-600 p-2 rounded-lg">
+            <i id="toast-icon" class="fa-solid fa-circle-info text-lg"></i>
+        </div>
+        <div class="flex-1">
+            <h4 id="toast-title" class="font-bold text-xs text-slate-800">플랫폼 알림</h4>
+            <p id="toast-message" class="text-[11px] text-slate-500 mt-1"></p>
+        </div>
+        <button onclick="hideToast()" class="text-slate-400 hover:text-slate-700 text-xs"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- ========================================================
+        가상 매뉴얼 미리보기 팝업 모달
+        ======================================================== -->
+    <div id="manual-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white border border-slate-200 rounded-2xl max-w-2xl w-full p-5 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2 text-indigo-600">
+                    <i class="fa-regular fa-file-pdf text-xl"></i>
+                    <h3 class="font-black text-sm">"1. 안전교육 실적보고 사용자 매뉴얼(국내학교)(홈페이지게시용).pdf"</h3>
+                </div>
+                <button onclick="closeManualModal()" class="text-slate-400 hover:text-slate-700"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 text-xs text-slate-600 h-96 overflow-y-auto">
+                <div class="border-b border-slate-200 pb-2 mb-2 text-center">
+                    <strong class="text-sm text-slate-800">학교안전지원시스템 사용자 매뉴얼 요약본</strong>
+                </div>
+                <p><strong>[1단계] 로그인 및 회원정보 입력</strong></p>
+                <p class="pl-3">사용자는 기존 계정 유무에 따라 통합회원 전환 또는 신규회원가입 절차를 진행합니다. 본인 인증 완료 후 기본 정보와 필수 입력값(교직원 유형: 학교안전담당 교직원, 담당 업무: 실적보고 업무)을 명확히 선택해야 보고 창구 권한이 귀속됩니다.</p>
+                
+                <p><strong>[2단계] 실적보고 등록 화면 진입</strong></p>
+                <p class="pl-3">사고예방 > 실적보고 메뉴를 통해 해당 연도 및 학기의 교육 실적 등록 기한 내에 "실적보고하기" 절차를 활성화합니다.</p>
+                
+                <p><strong>[3단계] 정보 입력 및 최종 제출</strong></p>
+                <p class="pl-3">시간(차시)과 이수 횟수를 영역별로 명확히 입력한 후 [임시저장] 또는 [제출하기]를 수행하여 관할 전산망으로 이력을 완전 전송 보존 처리합니다.</p>
+            </div>
+
+            <div class="flex justify-end gap-2 text-xs">
+                <button onclick="closeManualModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-4 rounded-lg font-bold border border-slate-200 transition">닫기</button>
+                <button onclick="downloadManualSim()" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-black transition shadow-sm">
+                    매뉴얼 전체 다운로드
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 플랫폼 핵심 설계 가이드 및 정책 근거 푸터 -->
+    <footer class="mt-4 bg-white border border-slate-200 rounded-2xl p-4 text-xs text-slate-500 shadow-sm">
+        <h4 class="font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
+            <i class="fa-solid fa-gavel text-indigo-500"></i> 밀폐공간 전자작업허가 표준 전산화 연동 기준 (KOSHA GUIDE 최적화)
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-slate-500 leading-relaxed">
+            <div class="space-y-1">
+                <strong class="text-slate-700">1. 교육 실적 전자허가 플랫폼 통일</strong>
+                <p class="text-[11px]">
+                    작업자 수, 특별안전보건 이수 번호 일괄 보고 의무화 및 공단 DB와의 동기화 연계를 통해 수료 여부를 실시간 인증하는 선진 시스템입니다.
+                </p>
+            </div>
+            <div class="space-y-1">
+                <strong class="text-slate-700">2. 가중 과태료와 교육 이수 감경</strong>
+                <p class="text-[11px]">
+                    미보고 위반 사업장에 1단계 시정명령, 2단계 최초 부과, 3단계 가중 부과 방식을 적용하되, 기한 내 지정 교육 완수 시 부과액의 50%를 즉각 감경처리해 예방 중심의 계도를 달성합니다.
+                </p>
+            </div>
+            <div class="space-y-1">
+                <strong class="text-slate-700">3. 접근성 극대화를 위한 민관합동 연계</strong>
+                <p class="text-[11px]">
+                    현장에서 고용노동부 안전일터 위험신고 및 안전보건공단 원콜 무상장비 매칭 창구에 1-Click으로 접근해 안전 인프라의 양극화를 적극 극복합니다.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 자바스크립트 비즈니스 및 인터렉티브 로직 구현 -->
+    <script>
+        // 1. 가상의 밀폐공간 데이터 세트 (위험 데이터베이스)
+        const INITIAL_CONFINED_SPACES = [
+            { id: 'CS-001', name: 'A지구 104호 상수도 맨홀', type: '맨홀', address: '충북 진천군 진천읍 중앙로 12', lat: 40, lng: 30, riskLevel: '경고', mainHazard: '황화수소(H2S)', manager: '안전건설(주)', emergencyContact: '010-1234-5678', lastPermit: '2026.06.30' },
+            { id: 'CS-002', name: 'B공장 정화조 시설 3호', type: '정화조', address: '충북 진천군 신척산업단지길 45', lat: 60, lng: 70, riskLevel: '위험', mainHazard: '산소결핍, 이산화탄소', manager: '대성그린케미칼', emergencyContact: '010-9876-5432', lastPermit: '2026.07.02' },
+            { id: 'CS-003', name: '환경사업소 하수처리조 C-1', type: '하수처리장', address: '충북 진천군 초평면 평화길 88', lat: 25, lng: 55, riskLevel: '보통', mainHazard: '메탄(CH4)', manager: '진천환경공단', emergencyContact: '043-539-1100', lastPermit: '2026.07.05' },
+            { id: 'CS-004', name: 'C지구 화학설비 반응 탱크', type: '탱크/반응기', address: '충북 진천군 덕산읍 화학로 102', lat: 75, lng: 25, riskLevel: '위험', mainHazard: '질소가스 가압', manager: '한국바이오텍', emergencyContact: '010-4455-8899', lastPermit: '2026.05.20' }
+        ];
+
+        // 2. 가상의 안전보건 퀴즈 질문 세트
+        const QUIZ_QUESTIONS = [
+            {
+                id: 1,
+                question: "밀폐공간 진입 전 및 작업 중 '적정 산소 농도 범위'로 법적 안전기준에 부합하는 기준은 무엇인가요?",
+                options: [
+                    "14% 미만의 빈산소 상태",
+                    "18% 이상 ~ 23.5% 미만",
+                    "25% 이상의 고농도 가압 상태",
+                    "농도와 무관하게 분진 마스크만 착용하면 무방함"
+                ],
+                correct: 1,
+                explanation: "밀폐구조물의 안전 범위는 산소 18% 이상, 23.5% 미만입니다."
+            },
+            {
+                id: 2,
+                question: "밀폐공간 내부 유해가스 농도 측정 주기로 가장 올바른 안전 규칙 기준은?",
+                options: [
+                    "작업 당일 시작 전 단 1회만 측정한다.",
+                    "작업 시작 전 및 최소 2시간마다 주기적 측정(필요시 상시 감시 계측)",
+                    "작업이 완료된 퇴근 후 기록 증빙 목적으로만 기입한다.",
+                    "구멍 속을 육안으로 보고 맑아보이면 측정을 생략한다."
+                ],
+                correct: 1,
+                explanation: "가스 배출 및 정화 상태는 가변적이므로 작업 중에도 최소 2시간 주기로 재측정해야 합니다."
+            },
+            {
+                id: 3,
+                question: "밀폐공간 송기 마스크 등의 호흡구가 없는 감시인의 동료 구조 안전 원칙은?",
+                options: [
+                    "지체 없이 동료가 기절한 맨홀 밑으로 직접 진입하여 구조한다.",
+                    "질식 즉시 환기 송풍 송수관 팬을 끄고 대기한다.",
+                    "송기 호흡기 미착용 시 임의 진입을 엄금하고 즉각 119 긴급구조를 발신한다.",
+                    "사고 현장에서 신속 이탈하여 상급자 보고를 유선으로 준비한다."
+                ],
+                correct: 2,
+                explanation: "밀폐공간 질식사고 사망의 절반은 보조 도구 없이 구조를 시도한 동료에게서 발생하므로 119 구조가 원칙입니다."
+            }
+        ];
+
+        // 신설 미보고 의무위반 사업장 데이터셋 (시정조치 및 과태료 단계 시뮬레이터)
+        const INITIAL_NON_REPORTING_WORKPLACES = [
+            { id: 1, name: '태평준설건설', manager: '안병준', region: '진천 덕산읍', temporaryWorkers: 5, status: '시정 명령', fine: 0, deadline: '2026.07.25', completed: false },
+            { id: 2, name: '대동종합엔지니어링', manager: '임정석', region: '진천 이월면', temporaryWorkers: 3, status: '최초 과태료', fine: 1500000, deadline: '2026.07.20', completed: false },
+            { id: 3, name: '신화환경개발', manager: '김길수', region: '진천 백곡면', temporaryWorkers: 8, status: '가중 과태료', fine: 3000000, deadline: '2026.07.18', completed: false }
+        ];
+
+        // 3. 글로벌 상태 관리 변수 선언
+        let state = {
+            spaces: [...INITIAL_CONFINED_SPACES],
+            nonReporting: [...INITIAL_NON_REPORTING_WORKPLACES],
+            activeTab: 'edu', // 'map', 'database', 'edu', 'portal', '119'
+            appRole: 'worker', // 'worker', 'watcher', 'guardian'
+            mileage: 0,
+            
+            // 퀴즈 상태 관련
+            quizStarted: false,
+            currentQuizIndex: 0,
+            selectedAnswer: null,
+            quizPassed: false,
+            quizScore: 0,
+
+            // 모바일 워크플로우 상태
+            selectedSpaceId: '',
+            selectedSpace: null,
+            photoUploaded: false,
+            gasO2: 20.9,
+            gasH2S: 0,
+
+            // 감시인 감지 상태
+            watcherCheckedIn: false,
+            thirtyMinTimer: 1800,
+            timerActive: false,
+            checkInLog: [],
+            timerInterval: null,
+
+            // 비상 구조 상태
+            isSOSTriggered: false,
+            sosDetails: null,
+
+            // 등록 전자 신청 데이터
+            permits: [
+                {
+                    id: 'PM-901',
+                    spaceId: 'CS-003',
+                    spaceName: '환경사업소 하수처리조 C-1',
+                    workerName: '홍길동 조장',
+                    watcherName: '김철수 감시인',
+                    gasValues: { o2: 20.8, h2s: 0 },
+                    status: '진행중',
+                    startTime: '2026.07.06 13:00',
+                    watcherStatus: '정상배치(안전)'
+                }
+            ],
+            
+            // 실시간 플랫폼 전송 로그
+            notifications: [
+                { id: 1, message: "A지구 104호 맨홀 전자 밀폐구역 전산 등록 완료", type: 'info', time: '10:30' },
+                { id: 2, message: "환경사업소 하수처리조 C-1 통합작업허가 원청 승인 개방 완료", type: 'success', time: '10:45' }
+            ],
+            mapFilter: 'all'
+        };
+
+        // 커스텀 알림 오버레이(Toast) 관리 함수군
+        function showToast(title, message, type = 'info') {
+            const overlay = document.getElementById('custom-toast-overlay');
+            const iconBg = document.getElementById('toast-icon-bg');
+            const icon = document.getElementById('toast-icon');
+            const titleElem = document.getElementById('toast-title');
+            const msgElem = document.getElementById('toast-message');
+
+            titleElem.innerText = title;
+            msgElem.innerText = message;
+
+            // 타입별 스타일셋
+            if (type === 'success') {
+                iconBg.className = "bg-emerald-50 text-emerald-600 p-2 rounded-lg";
+                icon.className = "fa-solid fa-circle-check text-lg";
+            } else if (type === 'error') {
+                iconBg.className = "bg-red-50 text-red-600 p-2 rounded-lg";
+                icon.className = "fa-solid fa-triangle-exclamation text-lg animate-bounce";
+            } else if (type === 'warning') {
+                iconBg.className = "bg-amber-50 text-amber-600 p-2 rounded-lg";
+                icon.className = "fa-solid fa-circle-exclamation text-lg";
+            } else {
+                iconBg.className = "bg-indigo-50 text-indigo-600 p-2 rounded-lg";
+                icon.className = "fa-solid fa-circle-info text-lg";
+            }
+
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                hideToast();
+            }, 4500); // 4.5초 후 자동 닫힘
+        }
+
+        function hideToast() {
+            document.getElementById('custom-toast-overlay').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            // 시간 주기적 업데이터 가동
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('phone-time').innerText = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+            }, 1000);
+
+            // 초기 뷰 가동 및 렌더링 동기화
+            updateView();
+            sendSystemLog("밀폐공간 특별교육 의무화 및 실시간 관리 플랫폼 정상 기동 완료", "success");
+            sendSystemLog("산업안전공단 DB 일일 배치 동기화 수신 성공 (오전 04시 갱신)", "info");
+        };
+
+        // 오디오 비프 경보 발생기 (사운드 연계)
+        function playEmergencyBeep() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // 고음 비프
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch (e) {
+                console.log("AudioContext Blocked");
+            }
+        }
+
+        // 새 시스템 알림 로그 전송 보조원
+        function sendSystemLog(message, type = 'info') {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            state.notifications.unshift({
+                id: Date.now(),
+                message,
+                type,
+                time: timeStr
+            });
+            renderSystemLogs();
+        }
+
+        // 플랫폼 탭 스위칭
+        function switchPlatformTab(tabId) {
+            state.activeTab = tabId;
+            
+            // 모든 탭 컨테이너 숨김
+            document.getElementById('p-tab-map').classList.add('hidden');
+            document.getElementById('p-tab-database').classList.add('hidden');
+            document.getElementById('p-tab-edu').classList.add('hidden');
+            document.getElementById('p-tab-portal').classList.add('hidden');
+            document.getElementById('p-tab-119').classList.add('hidden');
+
+            // 모든 탭 버튼 활성 클래스 탈거
+            const tabButtons = ['map', 'database', 'edu', 'portal', '119'];
+            tabButtons.forEach(b => {
+                const btn = document.getElementById(`tab-btn-${b}`);
+                btn.className = "flex-1 xl:flex-none flex items-center justify-center text-[11px] px-2.5 py-1.5 rounded-lg font-semibold transition-all text-slate-500 hover:text-slate-800";
+            });
+
+            // 선택된 탭 복각 활성
+            document.getElementById(`p-tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (tabId === '119' && state.isSOSTriggered) {
+                activeBtn.className = "flex-1 xl:flex-none flex items-center justify-center text-[11px] px-2.5 py-1.5 rounded-lg font-semibold transition-all bg-red-600 text-white font-bold";
+            } else {
+                activeBtn.className = "flex-1 xl:flex-none flex items-center justify-center text-[11px] px-2.5 py-1.5 rounded-lg font-semibold transition-all bg-indigo-600 text-white font-bold";
+            }
+
+            updateView();
+        }
+
+        // 모바일 앱 역할 세션 스위칭
+        function switchAppRole(roleId) {
+            state.appRole = roleId;
+
+            // 모바일 역할 탭 버튼 색상 변환
+            const roles = ['worker', 'watcher', 'guardian'];
+            roles.forEach(r => {
+                const btn = document.getElementById(`role-btn-${r}`);
+                btn.className = "flex-1 text-[10px] py-1.5 rounded-lg transition-all font-bold text-slate-500 hover:text-slate-800";
+            });
+
+            document.getElementById(`role-btn-${roleId}`).className = "flex-1 text-[10px] py-1.5 rounded-lg transition-all font-bold bg-indigo-600 text-white shadow-sm";
+
+            // 앱 뷰 레이아웃 전환
+            document.getElementById('app-panel-worker').classList.add('hidden');
+            document.getElementById('app-panel-watcher').classList.add('hidden');
+            document.getElementById('app-panel-guardian').classList.add('hidden');
+
+            document.getElementById(`app-panel-${roleId}`).classList.remove('hidden');
+
+            updateView();
+        }
+
+        // 안전 퀴즈 개시
+        function startSafetyQuiz() {
+            state.quizStarted = true;
+            state.currentQuizIndex = 0;
+            state.selectedAnswer = null;
+            state.quizScore = 0;
+
+            document.getElementById('worker-substep-quiz-intro').classList.add('hidden');
+            document.getElementById('worker-substep-quiz-play').classList.remove('hidden');
+            renderQuizQuestion();
+        }
+
+        // 퀴즈 문제 렌더링
+        function renderQuizQuestion() {
+            const questionData = QUIZ_QUESTIONS[state.currentQuizIndex];
+            document.getElementById('quiz-progress-text').innerText = `질문 ${state.currentQuizIndex + 1} / ${QUIZ_QUESTIONS.length}`;
+            
+            const progressPct = ((state.currentQuizIndex + 1) / QUIZ_QUESTIONS.length) * 100;
+            document.getElementById('quiz-progress-bar').style.width = `${progressPct}%`;
+            
+            document.getElementById('quiz-question-title').innerText = questionData.question;
+
+            const optionsContainer = document.getElementById('quiz-options-container');
+            optionsContainer.innerHTML = '';
+
+            questionData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left text-[11px] p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition flex items-center";
+                btn.onclick = () => selectQuizOption(idx);
+                btn.id = `quiz-opt-${idx}`;
+                btn.innerHTML = `<span class="inline-block w-4.5 h-4.5 bg-white border border-slate-300 rounded-full text-center leading-4.5 text-[9px] mr-2 font-black">${idx + 1}</span> ${opt}`;
+                optionsContainer.appendChild(btn);
+            });
+
+            // 다음 버튼 비활성화
+            const nextBtn = document.getElementById('quiz-next-btn');
+            nextBtn.disabled = true;
+            nextBtn.className = "w-full py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-400 cursor-not-allowed transition";
+        }
+
+        // 퀴즈 보기 선택 시 활성화 피드백
+        function selectQuizOption(idx) {
+            state.selectedAnswer = idx;
+            const questionData = QUIZ_QUESTIONS[state.currentQuizIndex];
+
+            // 모든 보기를 미선택으로 전환
+            questionData.options.forEach((o, i) => {
+                const b = document.getElementById(`quiz-opt-${i}`);
+                b.className = "w-full text-left text-[11px] p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition flex items-center";
+            });
+
+            // 선택된 보기 강조
+            const activeBtn = document.getElementById(`quiz-opt-${idx}`);
+            activeBtn.className = "w-full text-left text-[11px] p-2.5 rounded-xl border border-indigo-300 bg-indigo-50 text-indigo-700 font-semibold transition flex items-center shadow-sm";
+
+            // 다음 버튼 활성화
+            const nextBtn = document.getElementById('quiz-next-btn');
+            nextBtn.disabled = false;
+            nextBtn.className = "w-full py-2 rounded-lg text-xs font-black bg-indigo-600 text-white transition shadow-sm";
+        }
+
+        // 답안 제출 후 다음 단계 진척
+        function submitQuizAnswer() {
+            const questionData = QUIZ_QUESTIONS[state.currentQuizIndex];
+            if (state.selectedAnswer === questionData.correct) {
+                state.quizScore++;
+            }
+
+            if (state.currentQuizIndex + 1 < QUIZ_QUESTIONS.length) {
+                state.currentQuizIndex++;
+                state.selectedAnswer = null;
+                renderQuizQuestion();
+            } else {
+                // 퀴즈 평가 최종 완료 처리
+                completeSafetyQuiz();
+            }
+        }
+
+        // 퀴즈 최종 마감 점수 체크
+        function completeSafetyQuiz() {
+            document.getElementById('worker-substep-quiz-play').classList.add('hidden');
+            
+            if (state.quizScore === QUIZ_QUESTIONS.length) {
+                // 만점 통과인 경우
+                state.quizPassed = true;
+                state.mileage += 500;
+                sendSystemLog("현장 근로자 안전보건 자격 평가 100% 이수 성공 - 500P 가산", "success");
+                showToast("안전 자격인증 통과", "안전 교육 퀴즈 평가를 만점으로 합격하여 이수증이 모바일로 등록되었습니다.", "success");
+                
+                // QR 스캔 단계로 이동
+                document.getElementById('worker-substep-scan').classList.remove('hidden');
+            } else {
+                // 과락 재시험 유도
+                state.quizPassed = false;
+                sendSystemLog("근로자 자격 평가 탈락 (기준 미달로 재시험 필요)", "error");
+                showToast("자격 평가 보완 요구", "의무 규칙 오답이 확인되어 퀴즈 잠금이 해제되지 않았습니다.", "error");
+                
+                // 다시 수칙 인트로로 롤백 및 보정
+                const introPanel = document.getElementById('worker-substep-quiz-intro');
+                introPanel.classList.remove('hidden');
+                introPanel.innerHTML = `
+                    <div class="w-14 h-14 bg-red-50 border border-red-200 rounded-full flex items-center justify-center mx-auto text-red-500 animate-bounce">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                    </div>
+                    <div class="space-y-1 text-center">
+                        <h4 class="text-xs font-bold text-red-600">자격평가 보완요구 (획득: ${state.quizScore}/3)</h4>
+                        <p class="text-[10px] text-slate-500 leading-relaxed">
+                            법정 질식 예방 수칙 기준 100% 미달 시 전산 허가서 잠금 장치가 해제되지 않습니다. 다시 응시하여 수칙을 검정받으십시오.
+                        </p>
+                    </div>
+                    <button onclick="startSafetyQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2 rounded-lg text-xs transition shadow-sm">
+                        안전교육 평가 재도전
+                    </button>
+                `;
+            }
+            updateView();
+        }
+
+        // 가상 QR 리딩 모의 작동
+        function simulateQRScan(spaceId) {
+            const space = state.spaces.find(s => s.id === spaceId);
+            if (space) {
+                state.selectedSpaceId = spaceId;
+                state.selectedSpace = space;
+                
+                sendSystemLog(`QR 연동 성공: [${space.name}] 실시간 단면 로드 완료`, "info");
+
+                document.getElementById('worker-substep-scan').classList.add('hidden');
+                document.getElementById('worker-substep-form').classList.remove('hidden');
+                document.getElementById('worker-form-space-name').innerText = space.name;
+
+                // QR 스캔 성공 시 원콜 서비스 신청 연계 팝업을 즉시 실행하여 보조
+                openOneCallPopup();
+            }
+        }
+
+        // 원콜 서비스 팝업 제어 함수군 정의
+        function openOneCallPopup() {
+            document.getElementById('onecall-modal').classList.remove('hidden');
+            sendSystemLog("안전보건공단 원콜(One-Call) 서비스 가이드 팝업 호출", "info");
+        }
+
+        function closeOneCallPopup() {
+            document.getElementById('onecall-modal').classList.add('hidden');
+        }
+
+        // 안전보건공단 공식 사이트 원콜 페이지로 다이렉트 새창 연결
+        function goToKoshOneCall() {
+            window.open("https://portal.kosha.or.kr/business-apply-search/health-support/one-call", "_blank");
+            sendSystemLog("안전보건공단 원콜서비스 공식 신청 채널 브라우저 새창 연결", "success");
+        }
+
+        // 공단 무상대여 장비 매칭을 실시간 앱 체크리스트에 반영 (자동 적용)
+        function applyOneCallEquipment() {
+            // 체크리스트 및 환풍기/마스크 확보 자동 체크 처리
+            document.getElementById('chk-vent').checked = true;
+            document.getElementById('chk-harness').checked = true;
+            
+            // 사진 업로드 증빙 자동 완성 처리 및 마일리지 특전 부여
+            state.photoUploaded = true;
+            state.mileage += 100; // 원콜 연계 마일리지 가산
+            
+            const btn = document.getElementById('btn-photo-upload');
+            btn.className = "text-[10px] bg-emerald-500 text-white py-1 px-2.5 rounded font-black transition flex items-center shadow-sm";
+            
+            const photoStatus = document.getElementById('photo-upload-status');
+            photoStatus.className = "text-[9px] text-emerald-600 font-bold";
+            photoStatus.innerText = "✓ 공단_원콜_무상대여_보증적용.png";
+
+            sendSystemLog("원콜 서비스 장비 매칭 완료: 가스측정기, 환기팬, 송기구 무상 인계 및 마일리지 100P 추가 적립", "success");
+            showToast("원콜 장비 대여 연계 성공", "공단 대여 장비 세트가 현장과 정상 매칭되어 체크리스트가 보정되었습니다.", "success");
+            
+            closeOneCallPopup();
+            updateView();
+        }
+
+        // 모의 사진 첨부 제어
+        function triggerPhotoUploadSim() {
+            state.photoUploaded = true;
+            const btn = document.getElementById('btn-photo-upload');
+            btn.className = "text-[10px] bg-emerald-500 text-white py-1 px-2.5 rounded font-black transition flex items-center shadow-sm";
+            document.getElementById('photo-upload-status').className = "text-[9px] text-emerald-600 font-bold";
+            document.getElementById('photo-upload-status').innerText = "✓ 증빙_가압풍기사진.png";
+            sendSystemLog("송풍기 동작 및 가스 측정 인증 실시간 사진 저장 완료", "success");
+        }
+
+        // 스마트 안전작업허가서 등록 송출
+        function submitElectronicPermit() {
+            const o2Val = parseFloat(document.getElementById('input-o2').value);
+            const h2sVal = parseInt(document.getElementById('input-h2s').value);
+            const isVentChecked = document.getElementById('chk-vent').checked;
+            const isHarnessChecked = document.getElementById('chk-harness').checked;
+
+            if (!state.photoUploaded) {
+                showToast("보완 요구", "질식 예방 조치를 증명할 수 있는 송풍 사진을 첨부해야 신청이 가능합니다.", "warning");
+                return;
+            }
+
+            if (!isVentChecked || !isHarnessChecked) {
+                showToast("수칙 미달", "가스 정화 및 안전대 보유 체크리스트 이행이 누락되었습니다.", "warning");
+                return;
+            }
+
+            // 가스 상태 위험 분류
+            const isDangerous = o2Val < 18 || o2Val >= 23.5 || h2sVal > 10;
+            const statusLabel = isDangerous ? '보완요구' : '승인대기';
+
+            const newPermit = {
+                id: `PM-${Math.floor(100 + Math.random() * 900)}`,
+                spaceId: state.selectedSpace.id,
+                spaceName: state.selectedSpace.name,
+                workerName: '이송기 조장',
+                watcherName: '미정(배치요청)',
+                gasValues: { o2: o2Val, h2s: h2sVal },
+                status: statusLabel,
+                startTime: '2026.07.06 15:30',
+                watcherStatus: '미지정',
+                dangerNote: isDangerous ? "허용 범위 한계치를 초과한 고농도 유해인자 감지! 정화 송풍 2시간 재가동 요구." : null
+            };
+
+            state.permits.unshift(newPermit);
+            
+            // 모바일 화면 전환
+            document.getElementById('worker-substep-form').classList.add('hidden');
+            
+            if (isDangerous) {
+                sendSystemLog(`경고: 위험 수치 가스 검출로 보완요구 처리됨 (${o2Val}%, ${h2sVal}ppm)`, "error");
+                showToast("유해가스 초과 검출", "농도가 법정 한도를 벗어나 허가 서식 승인이 지연되었습니다. 강제 환기를 즉시 수행하십시오.", "error");
+                
+                // 퀴즈를 통과한 상태에서 바로 폼으로 보완 요구 피드백
+                const formStep = document.getElementById('worker-substep-form');
+                formStep.classList.remove('hidden');
+            } else {
+                sendSystemLog(`신규 전자 서식 전송 접수 완료 (허가번호: ${newPermit.id})`, "info");
+                document.getElementById('worker-substep-pending').classList.remove('hidden');
+                // 승인 포털 배지 활성화
+                document.getElementById('portal-badge').innerText = state.permits.filter(p => p.status === '승인대기').length;
+                document.getElementById('portal-badge').classList.remove('hidden');
+                showToast("신청서 접수 완료", "중앙 관리 플랫폼 전산 결재 대기열에 승인 신청이 정상 접수되었습니다.", "success");
+            }
+
+            updateView();
+        }
+
+        // 플랫폼 관리자 전결 승인
+        function approvePermitOnPlatform(permitId) {
+            state.permits = state.permits.map(p => {
+                if (p.id === permitId) {
+                    sendSystemLog(`허가번호 [${permitId}] 원청 및 발주관서 전자 승인 가결`, "success");
+                    
+                    // 모바일 작업자 화면을 Approved 로 업데이트
+                    document.getElementById('worker-substep-pending').classList.add('hidden');
+                    const approvedView = document.getElementById('worker-substep-approved');
+                    approvedView.classList.remove('hidden');
+                    
+                    document.getElementById('approved-space-name').innerText = p.spaceName;
+                    document.getElementById('approved-permit-id').innerText = `허가서 원장번호: ${p.id}`;
+                    
+                    return { ...p, status: '진행중' };
+                }
+                return p;
+            });
+
+            // 포털 배지 제거
+            const pendingCount = state.permits.filter(p => p.status === '승인대기').length;
+            if (pendingCount > 0) {
+                document.getElementById('portal-badge').innerText = pendingCount;
+            } else {
+                document.getElementById('portal-badge').classList.add('hidden');
+            }
+
+            updateView();
+        }
+
+        // 플랫폼 관리자 보완 반려
+        function rejectPermitOnPlatform(permitId) {
+            state.permits = state.permits.map(p => {
+                if (p.id === permitId) {
+                    sendSystemLog(`허가번호 [${permitId}] 행정 서류 보완 요구 반려`, "error");
+                    
+                    // 모바일 작업자 화면을 폼으로 환원
+                    document.getElementById('worker-substep-pending').classList.add('hidden');
+                    document.getElementById('worker-substep-form').classList.remove('hidden');
+                    
+                    return { ...p, status: '보완요구' };
+                }
+                return p;
+            });
+            updateView();
+        }
+
+        // 감시자 GPS 매칭 브릿지 기동
+        function activateWorkWatcherBridge() {
+            // 작업 완료 후 감시자 모드로 롤링 인계
+            switchAppRole('watcher');
+            document.getElementById('watcher-substep-unauthenticated').classList.remove('hidden');
+            document.getElementById('watcher-substep-monitoring').classList.add('hidden');
+        }
+
+        // 감시원 상주 체크인 실현
+        function triggerWatcherCheckIn() {
+            state.watcherCheckedIn = true;
+            sendSystemLog("감시원 현장 좌표 일치 성공 (안전 거리 10m 정합 확인)", "success");
+            showToast("감시원 체크인 성공", "밀폐구역 반경 10m 내 안전 상주가 검증되었습니다. 정기 보고 타이머가 활성화됩니다.", "success");
+
+            document.getElementById('watcher-substep-unauthenticated').classList.add('hidden');
+            document.getElementById('watcher-substep-monitoring').classList.remove('hidden');
+
+            const spaceName = state.selectedSpace ? state.selectedSpace.name : "환경사업소 하수처리조 C-1";
+            document.getElementById('watcher-monitoring-space').innerText = spaceName;
+
+            // 타이머 가동 개시 (30분 주기보고)
+            startWatcherTimer();
+        }
+
+        // 감시 주기보고 타이머 시작
+        function startWatcherTimer() {
+            state.thirtyMinTimer = 1800; // 30분
+            state.timerActive = true;
+            
+            if (state.timerInterval) clearInterval(state.timerInterval);
+
+            // 최초 점검 기록 주입
+            state.checkInLog = [];
+            const now = new Date();
+            state.checkInLog.push(`[정주 승인] ${now.toLocaleTimeString()} - GPS 반경 안착 성료`);
+            renderWatcherLogs();
+
+            state.timerInterval = setInterval(() => {
+                if (state.thirtyMinTimer > 0) {
+                    state.thirtyMinTimer--;
+                    updateWatcherTimerDisplay();
+                } else {
+                    // 타이머 미 응답 만료 시 -> 119 자동 SOS 발동
+                    clearInterval(state.timerInterval);
+                    triggerImmediateSOS("🚨 경고: 현장 감시인 30분 주기 안전 확인 미응답으로 인해 플랫폼 자체 긴급 SOS가 발령되었습니다!");
+                }
+            }, 1000);
+        }
+
+        // 타이머 시각 동기화
+        function updateWatcherTimerDisplay() {
+            const minutes = Math.floor(state.thirtyMinTimer / 60);
+            const seconds = state.thirtyMinTimer % 60;
+            document.getElementById('watcher-timer-display').innerText = `${minutes}분 ${seconds}초`;
+        }
+
+        // 타이머 "이상없음" 수동 연장 보고
+        function resetSafetyTimer() {
+            state.thirtyMinTimer = 1800; // 30분 갱신
+            const now = new Date();
+            state.checkInLog.unshift(`[보고 갱신] ${now.toLocaleTimeString()} - 가스 정상, 감시 이상無`);
+            sendSystemLog("감시인 정기 상황보고 접수 - 정상 연장 완료", "info");
+            renderWatcherLogs();
+        }
+
+        // 감시 활동 로그 렌더링
+        function renderWatcherLogs() {
+            const logBox = document.getElementById('watcher-log-container');
+            logBox.innerHTML = '';
+            state.checkInLog.forEach(log => {
+                const p = document.createElement('p');
+                p.className = "text-slate-600";
+                p.innerText = log;
+                logBox.appendChild(p);
+            });
+        }
+
+        // 긴급 비상 SOS 상태 발동
+        function triggerImmediateSOS(message) {
+            state.isSOSTriggered = true;
+            playEmergencyBeep();
+            
+            // 배지 온
+            document.getElementById('sos-badge').classList.remove('hidden');
+
+            // 119 탭 셋업
+            const currentActiveSpace = state.selectedSpace || state.spaces[2]; // 데이터 안전망
+            state.sosDetails = {
+                space: currentActiveSpace,
+                hazard: currentActiveSpace.mainHazard,
+                address: currentActiveSpace.address
+            };
+
+            sendSystemLog(message, "error");
+            showToast("🚨 긴급 119 SOS 전파", "현장의 가스 상황 위기 또는 감시원 이탈 감지로 소방방재청 비상 채널에 즉시 데이터가 이송 전파되었습니다.", "error");
+
+            // 119 연계 탭으로 본체 강제 전환
+            switchPlatformTab('119');
+        }
+
+        // 긴급 해제 및 상황 복구
+        function clearEmergencyState() {
+            state.isSOSTriggered = false;
+            state.sosDetails = null;
+            document.getElementById('sos-badge').classList.add('hidden');
+            
+            // 타이머 중단
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerActive = false;
+            state.watcherCheckedIn = false;
+
+            sendSystemLog("비상 수색 및 구제 구조 상황 종료 - 안전 복귀 완료", "success");
+            showToast("긴급 복구 종료", "위급 조치가 완수되고 비상 제어 시스템이 정상 평시 관제 상태로 복귀했습니다.", "success");
+            
+            // 작업자 앱 인트로로 롤백
+            state.quizPassed = false;
+            state.quizStarted = false;
+            const introPanel = document.getElementById('worker-substep-quiz-intro');
+            introPanel.className = "text-center py-2 bg-slate-50 border border-slate-200 rounded-xl";
+            introPanel.classList.remove('hidden');
+            document.getElementById('worker-substep-scan').classList.add('hidden');
+            document.getElementById('worker-substep-form').classList.add('hidden');
+            document.getElementById('worker-substep-pending').classList.add('hidden');
+            document.getElementById('worker-substep-approved').classList.add('hidden');
+
+            switchPlatformTab('map');
+        }
+
+        // 작업 성료 완료 보고
+        function finishWatcherWork() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerActive = false;
+            state.watcherCheckedIn = false;
+            
+            // 해당 ID 완료 승인으로 업데이트
+            state.permits = state.permits.map(p => {
+                if (p.spaceId === state.selectedSpaceId) {
+                    return { ...p, status: '종료완료' };
+                }
+                return p;
+            });
+
+            sendSystemLog("밀폐공간 철수 완벽 완수 및 출입구 물리 폐쇄 보고 정상 접수", "success");
+            showToast("철수 성료", "모든 근로자의 퇴호 안전 철수가 확인되어 본 밀폐구역 전산 장막이 패쇄 봉인되었습니다.", "success");
+            
+            // 작업자 상태 리셋
+            state.quizPassed = false;
+            state.quizStarted = false;
+            
+            switchAppRole('worker');
+            
+            // 초기 퀴즈 수락 대기로 환원
+            document.getElementById('worker-substep-quiz-intro').classList.remove('hidden');
+            document.getElementById('worker-substep-approved').classList.add('hidden');
+
+            updateView();
+        }
+
+        // 지킴이 점검 결과 기입
+        function submitGuardianCheck(permitId) {
+            sendSystemLog(`[불시안전단속] 허가 일련 [${permitId}] 가동 환기상태 양호 확인 서명 완료`, "success");
+            showToast("단속 점검 이송", "안전지킴이의 현장 감사 기록 및 준수 서명이 통합 관제 데이터베이스에 동기화되었습니다.", "success");
+            updateView();
+        }
+
+        // 데이터 원장 초기화
+        function resetDataAndLogs() {
+            state.spaces = [...INITIAL_CONFINED_SPACES];
+            state.nonReporting = [...INITIAL_NON_REPORTING_WORKPLACES];
+            state.permits = [
+                {
+                    id: 'PM-901',
+                    spaceId: 'CS-003',
+                    spaceName: '환경사업소 하수처리조 C-1',
+                    workerName: '홍길동 조장',
+                    watcherName: '김철수 감시인',
+                    gasValues: { o2: 20.8, h2s: 0 },
+                    status: '진행중',
+                    startTime: '2026.07.06 13:00',
+                    watcherStatus: '정상배치(안전)'
+                }
+            ];
+            state.notifications = [
+                { id: 1, message: "A지구 104호 맨홀 전자 밀폐구역 전산 등록 완료", type: 'info', time: '10:30' },
+                { id: 2, message: "환경사업소 하수처리조 C-1 통합작업허가 원청 승인 개방 완료", type: 'success', time: '10:45' }
+            ];
+            sendSystemLog("대시보드 통합 관리 이력 완전 초기화 성공", "info");
+            updateView();
+        }
+
+        // 지도 레이어 필터 토글링
+        function setMapFilter(filterType) {
+            state.mapFilter = filterType;
+            
+            const filters = ['all', 'active', 'danger'];
+            filters.forEach(f => {
+                const btn = document.getElementById(`filter-${f}`);
+                if (f === filterType) {
+                    btn.className = "text-[10px] px-2.5 py-1 rounded bg-white text-slate-800 font-bold border border-slate-300 shadow-sm";
+                } else {
+                    btn.className = "text-[10px] px-2.5 py-1 rounded bg-slate-100 text-slate-500 border border-slate-200";
+                }
+            });
+
+            renderMapNodes();
+        }
+
+        // 가상 지도 노드 마킹 렌더링
+        function renderMapNodes() {
+            const container = document.getElementById('map-nodes-container');
+            container.innerHTML = '';
+
+            state.spaces.forEach(space => {
+                // 활성 승인 필터 매칭
+                const isActiveJob = state.permits.some(p => p.spaceId === space.id && p.status === '진행중');
+                const isSOSNode = state.isSOSTriggered && (state.sosDetails?.space?.id === space.id || space.id === 'CS-003');
+
+                // 필터 스크리닝
+                if (state.mapFilter === 'active' && !isActiveJob) return;
+                if (state.mapFilter === 'danger' && space.riskLevel !== '위험') return;
+
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = "absolute cursor-pointer transition-all duration-300 hover:scale-125 z-10";
+                nodeDiv.style.top = `${space.lat}%`;
+                nodeDiv.style.left = `${space.lng}%`;
+                nodeDiv.onclick = () => selectSpaceOnMap(space.id);
+
+                let badgeHtml = '';
+                let pinColor = 'bg-slate-400 border-white text-white';
+
+                // 노드 마커 외곽선 애니메이션 제어
+                if (isSOSNode) {
+                    badgeHtml = `<span class="absolute -inset-4 w-12 h-12 rounded-full bg-red-500/50 animate-ping"></span>`;
+                    pinColor = 'bg-red-500 border-white text-white animate-bounce';
+                } else if (isActiveJob) {
+                    badgeHtml = `<span class="absolute -inset-3.5 w-10 h-10 rounded-full bg-emerald-500/40 animate-pulse"></span>`;
+                    pinColor = 'bg-emerald-500 border-white text-white';
+                } else if (space.riskLevel === '위험') {
+                    pinColor = 'bg-amber-500 border-white text-white';
+                }
+
+                nodeDiv.innerHTML = `
+                    ${badgeHtml}
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 ${pinColor}">
+                        <i class="fa-solid ${isSOSNode ? 'fa-triangle-exclamation text-[10px]' : 'fa-location-dot text-[11px]'}"></i>
+                    </div>
+                    <div class="absolute top-7 -left-12 w-28 bg-white/95 border border-slate-200 rounded-lg p-1 text-[9px] text-center shadow-md backdrop-blur-sm">
+                        <p class="font-bold truncate text-slate-800">${space.name}</p>
+                        <span class="text-[8px] font-black px-1 rounded bg-slate-100 text-slate-500 border border-slate-200">${space.riskLevel}</span>
+                    </div>
+                `;
+
+                container.appendChild(nodeDiv);
+            });
+        }
+
+        // 지도의 마커 터치 시 연동 상세 로드
+        function selectSpaceOnMap(spaceId) {
+            const space = state.spaces.find(s => s.id === spaceId);
+            if (space) {
+                state.selectedSpace = space;
+                
+                const detailBox = document.getElementById('selected-space-detail');
+                detailBox.innerHTML = `
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">시설식별 ID / 명칭</span>
+                        <strong class="text-slate-800">${space.id} / ${space.name}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">관제 대표 유해원소</span>
+                        <strong class="text-amber-600 font-bold">${space.mainHazard}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">현장 도급 관리주체</span>
+                        <strong class="text-slate-800">${space.manager}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">위기대응 무선망 연락책</span>
+                        <strong class="text-indigo-600 font-mono">${space.emergencyContact}</strong>
+                    </div>
+                `;
+                sendSystemLog(`위험지도: [${space.name}] 실시간 센서 및 구조정보 분석 연계`, "info");
+            }
+        }
+
+        // 개별 실적 보고서 직접 제출 함수
+        function submitSingleEduReport() {
+            const tempCount = parseInt(document.getElementById('edu-input-temp').value) || 0;
+            const permCount = parseInt(document.getElementById('edu-input-perm').value) || 0;
+            const codes = document.getElementById('edu-input-codes').value.trim();
+
+            if (tempCount === 0 && permCount === 0) {
+                showToast("인원 누락", "보고할 작업자 수를 명확하게 입력해주세요.", "warning");
+                return;
+            }
+            if (!codes) {
+                showToast("수료 번호 누락", "작업자별 교육 이수번호를 입력해야 법정 효력이 입증됩니다.", "warning");
+                return;
+            }
+
+            // 마일리지 지급 및 가산 로그 전송
+            state.mileage += 200;
+            sendSystemLog(`교육보고의무 접수 완료: 일용직 ${tempCount}명, 상시 ${permCount}명 수료 검증 완료`, "success");
+            showToast("교육 보고서 수령 성료", "교육 수료 실적 보고서가 고용노동부 전산 및 본 플랫폼에 정상 등록되어 검증을 마쳤습니다. (우수 성실보고 200P 가산)", "success");
+            updateView();
+        }
+
+        // 가상 Excel 템플릿 다운로드 시뮬레이터
+        function downloadExcelTemplate() {
+            sendSystemLog("밀폐공간 특별교육 실적 일괄보고 Excel 템플릿 다운로드 완료", "info");
+            showToast("엑셀 파일 준비", "밀폐공간_특별안전교육_일괄보고_템플릿.xlsx 다운로드가 완료되었습니다. 양식 기입 후 업로드 하십시오.", "success");
+        }
+
+        // 가상 Excel 파일 일괄 업로드 시뮬레이터
+        function simulateExcelUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                sendSystemLog(`일괄 Excel 분석 시작: 파일명 [${file.name}] 로딩 중...`, "info");
+                
+                // 가상의 Excel 분석을 통한 자동 주입 처리
+                setTimeout(() => {
+                    state.mileage += 300;
+                    sendSystemLog("Excel 일괄 업로드 완료: 시범지역 5개 위탁사 작업자 24명 교육 이수 검증 합치 성공", "success");
+                    showToast("일괄 업로드 완수", "엑셀 내부 24명의 이수번호가 산업안전공단 DB 배치 매칭을 통해 수기 확인 및 자동 동기화되었습니다.", "success");
+                    updateView();
+                }, 1200);
+            }
+        }
+
+        // 의무 위반 미보고 사업장 지정 교육 예약을 통한 과태료 감경 처리
+        function applyMitigation(id) {
+            state.nonReporting = state.nonReporting.map(item => {
+                if (item.id === id) {
+                    const originalFine = item.fine;
+                    const mitigatedFine = Math.floor(originalFine * 0.5);
+                    
+                    sendSystemLog(`과태료 감경 조치: [${item.name}] 특별교육 즉시 예약 및 완수 증빙 확인`, "success");
+                    showToast("특별교육 예약 확정", `안전공단 교육 대조가 확인되어, 기존 과태료 ${originalFine.toLocaleString()}원에서 50% 감경된 ${mitigatedFine.toLocaleString()}원으로 조정되었습니다.`, "success");
+                    
+                    return {
+                        ...item,
+                        status: '감경 완료',
+                        fine: mitigatedFine,
+                        completed: true
+                    };
+                }
+                return item;
+            });
+            updateView();
+        }
+
+        // 고용노동부 안전일터 신고 모달 제어 함수
+        function openMoelReportPopup() {
+            document.getElementById('moel-modal').classList.remove('hidden');
+        }
+
+        function closeMoelReportPopup() {
+            document.getElementById('moel-modal').classList.add('hidden');
+        }
+
+        // 고용노동부 안전일터 위험신고 제출
+        function submitMoelReport() {
+            const loc = document.getElementById('moel-input-location').value.trim();
+            const desc = document.getElementById('moel-input-desc').value.trim();
+            const category = document.getElementById('moel-input-category').value;
+
+            if (!loc || !desc) {
+                showToast("기입 누락", "위험 발견 위치 및 위반 내용을 상세히 적어주셔야 신고 처리가 수행됩니다.", "warning");
+                return;
+            }
+
+            sendSystemLog(`[안전일터신고] 익명 제보 접수 완료 - 위치: ${loc}`, "error");
+            showToast("공익 신고 접수 완료", "제보해주신 현장의 급박한 질식 요인이 고용부 특별단속센터 및 관할 감독관 전산망에 무선 전송되었습니다.", "success");
+            
+            // 신고자 마일리지 보상 혜택
+            state.mileage += 150;
+            
+            // 입력 폼 초기화 및 닫기
+            document.getElementById('moel-input-location').value = '';
+            document.getElementById('moel-input-desc').value = '';
+            closeMoelReportPopup();
+            updateView();
+        }
+
+        // 글로벌 안전보건공단 원콜서비스 대형 모달 제어 함수
+        function openOneCallGlobalPopup() {
+            document.getElementById('onecall-global-modal').classList.remove('hidden');
+        }
+
+        function closeOneCallGlobalPopup() {
+            document.getElementById('onecall-global-modal').classList.add('hidden');
+        }
+
+        // 글로벌 원콜 종합 지원 가상 연동 적용
+        function applyOneCallEquipmentGlobal() {
+            state.mileage += 100;
+            sendSystemLog("안전보건공단 원콜 무상장비 풀 패키지(측정기/송풍팬/안전줄) 현장 매칭 성공", "success");
+            showToast("원콜 무상 매칭 승인", "공단 특별지원 무상대여 키트가 신청 사업장에 가상 매칭되었습니다. (100P 추가 적립)", "success");
+            
+            // 모바일 체크도 연동되어 자동 해결되도록 보정
+            document.getElementById('chk-vent').checked = true;
+            document.getElementById('chk-harness').checked = true;
+            state.photoUploaded = true;
+            
+            const btn = document.getElementById('btn-photo-upload');
+            if (btn) {
+                btn.className = "text-[10px] bg-emerald-500 text-white py-1 px-2.5 rounded font-black transition flex items-center shadow-sm";
+                document.getElementById('photo-upload-status').className = "text-[9px] text-emerald-600 font-bold";
+                document.getElementById('photo-upload-status').innerText = "✓ 공단_원콜_무상대여_보증적용.png";
+            }
+
+            closeOneCallGlobalPopup();
+            updateView();
+        }
+
+        // 매뉴얼 미리보기 모달 제어 함수군
+        function openManualModal() {
+            document.getElementById('manual-modal').classList.remove('hidden');
+        }
+
+        function closeManualModal() {
+            document.getElementById('manual-modal').classList.add('hidden');
+        }
+
+        function downloadManualSim() {
+            sendSystemLog("법정 교육보고 매뉴얼 전체 PDF 파일 다운로드 시뮬레이터 가동 완료", "info");
+            showToast("다운로드 가동", '"1. 안전교육 실적보고 사용자 매뉴얼(국내학교)(홈페이지게시용).pdf" 파일 가상 다운로드가 실행되었습니다.', "success");
+            closeManualModal();
+        }
+
+        // 대시보드 및 모든 컴포넌트 렌더링 업데이트
+        function updateView() {
+            // 마일리지 반영
+            document.getElementById('global-mileage').innerText = state.mileage;
+
+            // 1. 지도 가동
+            renderMapNodes();
+
+            // 2. 통합 대장 DB 데이터 동환
+            const dbTableBody = document.getElementById('db-table-body');
+            dbTableBody.innerHTML = '';
+            state.spaces.forEach(space => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 border-b border-slate-100";
+                
+                const isActive = state.permits.some(p => p.spaceId === space.id && p.status === '진행중');
+                const riskBadge = space.riskLevel === '위험' 
+                    ? '<span class="bg-red-50 text-red-600 border border-red-200 px-1.5 py-0.5 rounded font-black text-[9px]">위험</span>'
+                    : '<span class="bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-black text-[9px]">경고</span>';
+
+                tr.innerHTML = `
+                    <td class="p-2.5">
+                        <span class="font-mono text-slate-800 font-black block">${space.id}</span>
+                        <span class="text-[9px] text-slate-400">${space.type}</span>
+                    </td>
+                    <td class="p-2.5">
+                        <span class="font-bold text-slate-700 block">${space.name}</span>
+                        <span class="text-[9px] text-slate-400">${space.manager}</span>
+                    </td>
+                    <td class="p-2.5">
+                        <span class="text-amber-600 block font-semibold text-[10px]">${space.mainHazard}</span>
+                        ${riskBadge}
+                    </td>
+                    <td class="p-2.5">
+                        <div class="flex items-center gap-1 text-emerald-600 font-medium">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>법정 보전 완료</span>
+                        </div>
+                        <span class="text-[9px] text-slate-400">갱신: ${space.lastPermit}</span>
+                    </td>
+                `;
+                dbTableBody.appendChild(tr);
+            });
+
+            // 3. 미보고 의무위반 사업장 점증 과태료 목록 그리기
+            const nonReportingContainer = document.getElementById('non-reporting-workplaces');
+            if (nonReportingContainer) {
+                nonReportingContainer.innerHTML = '';
+                state.nonReporting.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white border border-slate-200 rounded-xl p-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 text-xs shadow-sm";
+                    
+                    let statusColor = 'text-amber-600 bg-amber-50 border-amber-200';
+                    let fineInfo = '';
+                    let actionBtn = '';
+
+                    if (item.status === '시정 명령') {
+                        statusColor = 'text-indigo-600 bg-indigo-50 border-indigo-200';
+                        fineInfo = `<span class="text-indigo-600 font-bold">1단계 조치: 즉시 시정 권고</span>`;
+                    } else if (item.status === '최초 과태료') {
+                        statusColor = 'text-amber-600 bg-amber-50 border-amber-200';
+                        fineInfo = `<span class="text-red-600 font-bold">2단계 최초 부과: ${item.fine.toLocaleString()}원</span>`;
+                    } else if (item.status === '가중 과태료') {
+                        statusColor = 'text-red-600 bg-red-50 border-red-200';
+                        fineInfo = `<span class="text-red-600 font-extrabold">3단계 가중 부과: ${item.fine.toLocaleString()}원</span>`;
+                    } else {
+                        statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                        fineInfo = `<span class="text-emerald-600 font-bold">감경 와해: ${item.fine.toLocaleString()}원 완납</span>`;
+                    }
+
+                    if (!item.completed) {
+                        actionBtn = `
+                            <button onclick="applyMitigation(${item.id})" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] py-1 px-2.5 rounded transition shadow-sm">
+                                특별교육 즉시예약 (50% 감경)
+                            </button>
+                        `;
+                    } else {
+                        actionBtn = `
+                            <span class="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                                <i class="fa-solid fa-circle-check"></i> 의무 감경 승인됨
+                            </span>
+                        `;
+                    }
+
+                    card.innerHTML = `
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <strong class="text-slate-800 text-sm">${item.name}</strong>
+                                <span class="text-[9px] px-2 py-0.5 rounded border ${statusColor} font-bold">${item.status}</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500">지역: ${item.region} | 관리책임: ${item.manager} | 미이수근로: ${item.temporaryWorkers}명</p>
+                            <div class="text-[10px] flex gap-2">
+                                ${fineInfo}
+                                <span class="text-slate-400">기한: ${item.deadline}까지</span>
+                            </div>
+                        </div>
+                        <div class="self-end md:self-center">
+                            ${actionBtn}
+                        </div>
+                    `;
+                    nonReportingContainer.appendChild(card);
+                });
+            }
+
+            // 4. 누적 전자이력 로그 가동
+            const permitHistoryContainer = document.getElementById('permit-history-list');
+            permitHistoryContainer.innerHTML = '';
+            state.permits.forEach(p => {
+                const div = document.createElement('div');
+                div.className = "bg-white p-2.5 rounded-lg border border-slate-200 flex justify-between items-center text-xs shadow-sm";
+                
+                let statusBadge = '';
+                if (p.status === '진행중') {
+                    statusBadge = '<span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] font-black px-1.5 py-0.5 rounded">진행중</span>';
+                } else if (p.status === '승인대기') {
+                    statusBadge = '<span class="bg-indigo-50 text-indigo-600 border border-indigo-200 text-[9px] font-black px-1.5 py-0.5 rounded">대기중</span>';
+                } else if (p.status === '종료완료') {
+                    statusBadge = '<span class="bg-slate-100 text-slate-500 border border-slate-200 text-[9px] font-black px-1.5 py-0.5 rounded">종료</span>';
+                } else {
+                    statusBadge = '<span class="bg-red-50 text-red-600 border border-red-200 text-[9px] font-black px-1.5 py-0.5 rounded">반려</span>';
+                }
+
+                div.innerHTML = `
+                    <div class="space-y-0.5">
+                        <div class="flex items-center gap-2">
+                            <strong class="text-slate-700 font-bold">${p.spaceName}</strong>
+                            <span class="text-[9px] font-mono text-slate-400">${p.id}</span>
+                        </div>
+                        <p class="text-[10px] text-slate-500">책임: ${p.workerName} | 안전가스 산소: ${p.gasValues.o2}%</p>
+                    </div>
+                    <div class="text-right">
+                        ${statusBadge}
+                        <span class="block text-[9px] text-slate-400 mt-1">${p.startTime}</span>
+                    </div>
+                `;
+                permitHistoryContainer.appendChild(div);
+            });
+
+            // 5. 승인 포털 신청 대기함 갱신
+            const portalRequestsContainer = document.getElementById('portal-requests-container');
+            portalRequestsContainer.innerHTML = '';
+            
+            const pendingRequests = state.permits.filter(p => p.status === '승인대기' || p.status === '보완요구');
+            if (pendingRequests.length === 0) {
+                portalRequestsContainer.innerHTML = `
+                    <div class="text-center py-10 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+                        <i class="fa-solid fa-folder-open text-slate-400 text-2xl mb-1.5"></i>
+                        <p class="text-xs text-slate-400">현재 결재 대기 중인 안전작업허가 원서가 없습니다.</p>
+                    </div>
+                `;
+            } else {
+                pendingRequests.forEach(p => {
+                    const reqDiv = document.createElement('div');
+                    reqDiv.className = "bg-white border border-slate-200 rounded-xl p-3 space-y-2.5 shadow-sm";
+                    reqDiv.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="bg-indigo-50 text-indigo-600 text-[9px] font-bold px-1.5 py-0.5 rounded border border-indigo-100">${p.id}</span>
+                                <h4 class="text-xs font-bold text-slate-800 mt-1">${p.spaceName}</h4>
+                                <span class="text-[10px] text-slate-500">신청인: ${p.workerName} | 배치구조: 감시원 교육 이수 완료</span>
+                            </div>
+                            <span class="bg-amber-50 text-amber-600 border border-amber-200 text-[9px] px-2 py-0.5 rounded font-bold">승인 대기중</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-lg text-center text-[10px] border border-slate-200">
+                            <div>
+                                <span class="text-slate-500 block text-[9px]">측정 산소농도</span>
+                                <strong class="${p.gasValues.o2 < 18 || p.gasValues.o2 >= 23.5 ? 'text-red-500' : 'text-emerald-600'}">${p.gasValues.o2}%</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-500 block text-[9px]">측정 황화수소</span>
+                                <strong class="${p.gasValues.h2s > 10 ? 'text-red-500' : 'text-slate-600'}">${p.gasValues.h2s} ppm</strong>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-1.5 pt-1.5 border-t border-slate-100">
+                            <button onclick="rejectPermitOnPlatform('${p.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 text-[10px] py-1 px-3 rounded-lg font-bold border border-red-200 transition">
+                                <i class="fa-solid fa-xmark mr-1"></i> 보완요구 반려
+                            </button>
+                            <button onclick="approvePermitOnPlatform('${p.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] py-1 px-3 rounded-lg font-black transition shadow-sm">
+                                <i class="fa-solid fa-check mr-1"></i> 전산서식 안전승인
+                            </button>
+                        </div>
+                    `;
+                    portalRequestsContainer.appendChild(reqDiv);
+                });
+            }
+
+            // 6. 119 구제 패널 갱신
+            if (state.isSOSTriggered && state.sosDetails) {
+                document.getElementById('rescue-panel-active').classList.remove('hidden');
+                document.getElementById('rescue-panel-empty').classList.add('hidden');
+                
+                // 정보 맵핑
+                document.getElementById('rescue-space-name').innerText = state.sosDetails.space.name;
+                document.getElementById('rescue-space-address').innerText = state.sosDetails.address;
+                document.getElementById('rescue-space-hazard').innerText = state.sosDetails.hazard;
+
+                // 비상알림 배경 보정
+                const panel = document.getElementById('emergency-notice-panel');
+                panel.className = "p-3.5 rounded-xl border-2 bg-red-50 border-red-500 text-red-600 animate-pulse";
+                document.getElementById('emergency-notice-title').className = "text-xs font-bold text-red-700";
+                document.getElementById('emergency-notice-title').innerText = "🚨 119 구조대 긴급 무선상황 하달";
+                document.getElementById('emergency-notice-icon').className = "fa-solid fa-truck-medical text-lg text-red-500 animate-bounce";
+            } else {
+                document.getElementById('rescue-panel-active').classList.add('hidden');
+                document.getElementById('rescue-panel-empty').classList.remove('hidden');
+
+                const panel = document.getElementById('emergency-notice-panel');
+                panel.className = "p-3.5 rounded-xl border border-slate-200 bg-white text-slate-500";
+                document.getElementById('emergency-notice-title').className = "text-xs font-bold text-slate-800";
+                document.getElementById('emergency-notice-title').innerText = "119 소방방재청 실시간 비상전송 채널";
+                document.getElementById('emergency-notice-icon').className = "fa-solid fa-house-medical-flag text-lg text-slate-400";
+            }
+
+            // 7. 안전지킴이 가동 정보 가공
+            const guardianList = document.getElementById('guardian-active-works-list');
+            guardianList.innerHTML = '';
+            const activePermits = state.permits.filter(p => p.status === '진행중');
+            if (activePermits.length === 0) {
+                guardianList.innerHTML = `
+                    <div class="text-center py-6 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+                        <p class="text-[10px] text-slate-400">현재 관내에 승인 하에 가동 중인 밀폐 작업이 없어 안전 점검 점검표 발부 대상이 없습니다.</p>
+                    </div>
+                `;
+            } else {
+                activePermits.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-2.5 rounded-lg border border-slate-200 text-xs space-y-2 shadow-sm";
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <strong class="text-slate-800 block text-[11px]">${p.spaceName}</strong>
+                                <span class="text-[9px] text-slate-400">가동 조장: ${p.workerName} | 안전인자 양호</span>
+                            </div>
+                            <span class="bg-emerald-50 text-emerald-600 text-[9px] px-1.5 py-0.5 rounded font-bold border border-emerald-100">점검 대기</span>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded flex justify-between items-center text-[9px] border border-slate-200">
+                            <span class="text-slate-500">송풍 환기 상태 및 개인 마스크 점검 완료 확인</span>
+                            <button onclick="submitGuardianCheck('${p.id}')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-2 py-1 rounded transition text-[9px] shadow-sm">
+                                서명 전송
+                            </button>
+                        </div>
+                    `;
+                    guardianList.appendChild(card);
+                });
+            }
+
+            // 공통 알림 로그 다시 그리기
+            renderSystemLogs();
+        }
+
+        // 실시간 로깅 렌더링
+        function renderSystemLogs() {
+            const container = document.getElementById('system-notif-log');
+            container.innerHTML = '';
+            state.notifications.forEach(notif => {
+                const item = document.createElement('div');
+                item.className = "flex justify-between items-center bg-slate-50 p-1 rounded px-2 border border-slate-200";
+                
+                let ledColor = 'bg-indigo-400';
+                if (notif.type === 'error') ledColor = 'bg-red-500 animate-ping';
+                else if (notif.type === 'success') ledColor = 'bg-emerald-500';
+
+                item.innerHTML = `
+                    <div class="flex items-center space-x-2 text-slate-600">
+                        <span class="w-1.5 h-1.5 rounded-full ${ledColor}"></span>
+                        <span class="truncate max-w-[340px] md:max-w-none text-slate-700">${notif.message}</span>
+                    </div>
+                    <span class="text-slate-400 text-[9px]">${notif.time}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+    </script>
+</body>
+</html>
